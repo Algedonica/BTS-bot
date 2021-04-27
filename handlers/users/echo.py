@@ -3,7 +3,7 @@ import math
 from datetime import datetime
 from aiogram import types
 from loader import dp, bot
-from data.config import user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection
+from data.config import user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection, channelid
 from states import ProjectManage,SupportManage
 from aiogram.types import CallbackQuery,ReplyKeyboardRemove, InputFile
 from aiogram.utils.callback_data import CallbackData
@@ -14,7 +14,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name
+from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel
 
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
@@ -111,6 +111,15 @@ async def initialize_costs(message: types.Message):
 
 
     await bot.send_photo(chat_id=message.from_user.id,caption=html_text,parse_mode='HTML', photo=InputFile(pathname+r'courses/simba.png',filename='final-simba.png'))
+
+@dp.message_handler(state=ProjectManage.menu, text='💎 Партнерам «КК»')
+async def initialize_partners(message: types.Message):
+    html_text="\n".join(
+        [
+            'Coming soon'
+        ]
+    )
+    await bot.send_photo(chat_id=message.from_user.id, caption=html_text, parse_mode='HTML', photo='AgACAgIAAxkBAAITLmB4f7tNKQKOsT5LHH8dp8SquTddAAIPszEbl7fIS6KP_Op5051cAAFtAAGfLgADAQADAgADbQADdxMDAAEfBA')
 
 
 @dp.message_handler(state=ProjectManage.menu, text='💰 100% годовых — фонд SCHUTZ')
@@ -563,6 +572,10 @@ async def end_support(message: types.Message):
     thisicket=ticket_collection.find_one({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]})
     if thisicket!=None:
         ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient"}})
+        
+        await bot.send_message(chat_id=channelid, text=thisicket['messagedata'])
+
+
         if thisicket['operator']!='none':
             html_text2="\n".join(
                 [
@@ -572,7 +585,6 @@ async def end_support(message: types.Message):
                 ]
             )
             await bot.send_photo(chat_id=thisicket['operator'],caption=html_text2,parse_mode='HTML', photo=photoparser('clientfinished'))
-            # await bot.send_message(chat_id=thisicket['operator'],text=html_text2,parse_mode='HTML')
     thisuser=user_collection.find_one({'user_id':message.from_user.id})
     html_text="\n".join(
         [
@@ -598,7 +610,7 @@ async def end_supportbysupport(message: types.Message):
     thisicket=ticket_collection.find_one({"operator": message.from_user.id,"isopen": "onair"}) 
     if thisicket!=None:
         ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator"}})
-
+        await bot.send_message(chat_id=channelid, text=thisicket['messagedata'])
         html_text2="\n".join(
             [
                 ' ',
@@ -1473,7 +1485,9 @@ async def currenttalk(message: types.Message):
     datamessagehere = "\n".join(
         [
             thisicket["messagedata"],
-            html_text+' at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+            html_text,
+            ' ',
+            'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
         ]
     )
     ticket_collection.find_and_modify(
@@ -1496,7 +1510,9 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
         datamessagehere = "\n".join(
             [
                 thisicket["messagedata"],
-                html_text+' at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+                html_text,
+                ' ',
+                'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
             ]
         )
         
@@ -1514,7 +1530,9 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
         datamessagehere = "\n".join(
             [
                 thisicket["messagedata_timed"],
-                html_text+' at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+                html_text,
+                ' ',
+                'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
             ]
         )
         operatormessage = "\n".join(
@@ -1537,7 +1555,8 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
         datamessagehere = "\n".join(
             [
                 thisicket["messagedata_timed"],
-                html_text+' at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+                html_text,
+                'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
             ]
         )
         operatormessage = "\n".join(

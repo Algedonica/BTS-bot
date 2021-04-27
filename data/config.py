@@ -4,7 +4,11 @@ from dotenv import load_dotenv
 
 import pymongo
 import array
-client = pymongo.MongoClient("mongodb+srv://application:application@bosa-cluster.jseku.mongodb.net/cryptocons_dev?retryWrites=true&w=majority")
+load_dotenv()
+client = pymongo.MongoClient(str(os.getenv("db_connect")))
+
+states_connect=str(os.getenv("states_connect"))
+
 db = client.cryptocons_dev
 user_collection = db.users
 ticket_collection= db.tickets
@@ -15,7 +19,10 @@ states_collection=dbstates.aiogram_state
 knowledge_collection = db.knowledge_base
 pmessages_collection = db.personal_message
 videos_collection = db.videos
-load_dotenv()
+photos_collection=db.photos
+videocircles_collection=db.videocircle
+
+channelid=int(os.getenv("channel"))
 
 BOT_TOKEN = str(os.getenv("BOT_TOKEN"))
 admins = [
@@ -23,6 +30,8 @@ admins = [
 ]
 admincode = str(os.getenv("admincode"))
 ip = os.getenv("ip")
+
+
 
 aiogram_redis = {
     'host': ip,
