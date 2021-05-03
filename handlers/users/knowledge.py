@@ -14,7 +14,7 @@ from keyboards.inline import usersupportchoiceinline, ticket_callback, add_opera
 
 
 
-@dp.message_handler(state=ProjectManage.menu, text='⁉️ База знаний')
+@dp.message_handler(state=ProjectManage.menu, text='📚 Новичку')
 async def knwoledge_user_show(message: types.Message):
     itemstoshow=knowledge_collection.find({'parent':'main','item_id': {'$ne': 'main'}})
     html_text="\n".join(
@@ -27,6 +27,10 @@ async def knwoledge_user_show(message: types.Message):
     inlinekeys = InlineKeyboardMarkup(row_width=2)
     for x in itemstoshow:
         inlinekeys.add(InlineKeyboardButton(text=x['title'], callback_data=knowledge_list_call.new("shfqfrusr",param1=x['item_id'], param2='none')))
+    inlinekeys.add(InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='userbacktomenu'
+            ))
     await message.answer_photo(photo=photoparser('userknowledgebase'),caption=html_text, reply_markup=inlinekeys)
 
 @dp.callback_query_handler(knowledge_list_call.filter(command='shfqfrusr'), state=ProjectManage.menu)
@@ -34,7 +38,10 @@ async def show_knowledge_user_item_func(call: types.CallbackQuery, callback_data
     thissection=callback_data.get('param1')
     thissection_items=knowledge_collection.find({"parent":thissection, 'item_id': {'$ne': 'main'}})
     thissection = knowledge_collection.find_one({'item_id':thissection})
-
+    if thissection['photo_knowledge']!='none':
+        finalphoto=thissection['photo_knowledge']
+    else:
+        finalphoto=photoparser('userknowledgebase')
     if thissection['item_id'] == 'main':
         html_text="\n".join(
             [
@@ -46,7 +53,11 @@ async def show_knowledge_user_item_func(call: types.CallbackQuery, callback_data
         inlinekeys = InlineKeyboardMarkup(row_width=2)
         for x in thissection_items:
             inlinekeys.add(InlineKeyboardButton(text=x['title'], callback_data=knowledge_list_call.new("shfqfrusr",param1=x['item_id'], param2='none')))
-        await call.message.edit_media(media=InputMediaPhoto(photoparser('userknowledgebase'), caption=html_text), reply_markup=inlinekeys)
+        inlinekeys.add(InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='userbacktomenu'
+            ))
+        await call.message.edit_media(media=InputMediaPhoto(finalphoto, caption=html_text), reply_markup=inlinekeys)
     else:
         html_text="\n".join(
             [
@@ -59,8 +70,10 @@ async def show_knowledge_user_item_func(call: types.CallbackQuery, callback_data
         inlinekeys = InlineKeyboardMarkup(row_width=2)
         for x in thissection_items:
             inlinekeys.add(InlineKeyboardButton(text=x['title'], callback_data=knowledge_list_call.new("shfqfrusr",param1=x['item_id'], param2='none')))
-        inlinekeys.add(InlineKeyboardButton(text='◀️ предыдущий раздел', callback_data=knowledge_list_call.new("shfqfrusr",param1=thissection['parent'], param2='none')))
-        await call.message.edit_media(media=InputMediaPhoto(photoparser('userknowledgebase'), caption=html_text), reply_markup=inlinekeys)
+        inlinekeys.add(InlineKeyboardButton(text='↩️ Назад', callback_data=knowledge_list_call.new("shfqfrusr",param1=thissection['parent'], param2='none')))
+    
+        
+        await call.message.edit_media(media=InputMediaPhoto(finalphoto, caption=html_text), reply_markup=inlinekeys)
 
 
 @dp.callback_query_handler(knowledge_list_call.filter(command='show_faq'), state=SupportManage.menu)
@@ -68,6 +81,10 @@ async def show_knowledge_func(call: types.CallbackQuery, callback_data:dict):
     thissection=callback_data.get('param1')
     thissection_items=knowledge_collection.find({"parent":thissection})
     thissection = knowledge_collection.find_one({'item_id':thissection})
+    if thissection['photo_knowledge']!='none':
+        finalphoto=thissection['photo_knowledge']
+    else:
+        finalphoto=photoparser('adminknowledgebase')
     if thissection['item_id'] == "main":
         html_text="\n".join(
             [
@@ -82,7 +99,7 @@ async def show_knowledge_func(call: types.CallbackQuery, callback_data:dict):
         inlinekeys.add(InlineKeyboardButton(text='Добавить раздел', callback_data=knowledge_list_call.new("add_faq",param1=thissection['item_id'], param2='none')))
         inlinekeys.add(InlineKeyboardButton(text='◀️ главное меню', callback_data='to_admin_menu'))
 
-        await call.message.edit_media(media=InputMediaPhoto(photoparser('adminknowledgebase'), caption=html_text), reply_markup=inlinekeys)
+        await call.message.edit_media(media=InputMediaPhoto(finalphoto, caption=html_text), reply_markup=inlinekeys)
     else:
         html_text="\n".join(
             [
@@ -106,7 +123,7 @@ async def show_knowledge_func(call: types.CallbackQuery, callback_data:dict):
         inlinekeys.add(InlineKeyboardButton(text='Добавить раздел', callback_data=knowledge_list_call.new("add_faq",param1=thissection['item_id'], param2='none')))
         inlinekeys.add(InlineKeyboardButton(text='◀️ на уровень выше', callback_data=knowledge_list_call.new("show_faq",param1=thissection['parent'], param2="none")))
 
-        await call.message.edit_media(media=InputMediaPhoto(photoparser('adminknowledgebase'), caption=html_text), reply_markup=inlinekeys)
+        await call.message.edit_media(media=InputMediaPhoto(finalphoto, caption=html_text), reply_markup=inlinekeys)
 
 @dp.callback_query_handler(knowledge_list_call.filter(command='add_faq'), state=SupportManage.menu)
 async def add_knowledge_func(call: types.CallbackQuery, callback_data:dict):
@@ -114,14 +131,18 @@ async def add_knowledge_func(call: types.CallbackQuery, callback_data:dict):
     thissection=callback_data.get('param1')
     thissection_items=knowledge_collection.find({"parent":thissection})
     thissection = knowledge_collection.find_one({'item_id':thissection})
-
+    if thissection['photo_knowledge']!='none':
+        finalphoto=thissection['photo_knowledge']
+    else:
+        finalphoto=photoparser('adminknowledgebase')
 
     knowledge_collection.insert_one(
         {"item_id": thisnewid,
         "description":'none',
         "videocircle":'none',
         "parent": thissection['item_id'],
-        "title": "none"})
+        "title": "none",
+        "photo_knowledge":"none"})
 
     await call.answer('Раздел создан')
 
@@ -140,7 +161,7 @@ async def add_knowledge_func(call: types.CallbackQuery, callback_data:dict):
         inlinekeys.add(InlineKeyboardButton(text='Добавить раздел', callback_data=knowledge_list_call.new("add_faq",param1=thissection['item_id'], param2='none')))
         inlinekeys.add(InlineKeyboardButton(text='◀️ главное меню', callback_data='to_admin_menu'))
 
-        await call.message.edit_media(media=InputMediaPhoto(photoparser('adminknowledgebase'), caption=html_text), reply_markup=inlinekeys)
+        await call.message.edit_media(media=InputMediaPhoto(finalphoto, caption=html_text), reply_markup=inlinekeys)
     else:
         html_text="\n".join(
             [
@@ -164,7 +185,7 @@ async def add_knowledge_func(call: types.CallbackQuery, callback_data:dict):
         inlinekeys.add(InlineKeyboardButton(text='Добавить раздел', callback_data=knowledge_list_call.new("add_faq",param1=thissection['item_id'], param2='none')))
         inlinekeys.add(InlineKeyboardButton(text='◀️ на уровень выше', callback_data=knowledge_list_call.new("show_faq",param1=thissection['parent'], param2="none")))
 
-        await call.message.edit_media(media=InputMediaPhoto(photoparser('adminknowledgebase'), caption=html_text), reply_markup=inlinekeys)
+        await call.message.edit_media(media=InputMediaPhoto(finalphoto, caption=html_text), reply_markup=inlinekeys)
     
 
 
@@ -226,7 +247,6 @@ async def write_new_descr_knowledge_func(message: types.Message, state: FSMConte
 @dp.callback_query_handler(knowledge_list_call.filter(command='del_item_faq'), state=SupportManage.menu)
 async def ask_for_delete_knowledge_func(call: types.CallbackQuery, callback_data:dict):
     await call.answer(cache_time=0)
-    print('hoooooray')
     html_text="\n".join(
         [
             'Удалить раздел?',

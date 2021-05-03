@@ -47,7 +47,7 @@ async def show_menu_tables_csv(call:types.CallbackQuery, state: FSMContext):
             callback_data='init_csv_users'
         )],
         [InlineKeyboardButton(
-            text='◀️ Назад',
+            text='↩️ Назад',
             callback_data='supportbacktomenu'
         )]
     ])
@@ -121,7 +121,7 @@ async def show_filtered_tables_csv_func(call: types.CallbackQuery, callback_data
         callback_data=csv_tables_call.new('to_csv_cities',param1=1, param2="none")
     ))
     inlinekeys.add(InlineKeyboardButton(
-        text='◀️ Назад',
+        text='↩️ Назад',
         callback_data='to_csv_tables'
     ))
     await SupportManage.initcsv.set()
@@ -212,7 +212,7 @@ async def show_table_cities_csv_func(call: types.CallbackQuery, callback_data:di
         callback_data=csv_tables_call.new('to_csv_time',param1=1, param2="none")
     ))
     inlinekeys.add(InlineKeyboardButton(
-        text='◀️ Назад',
+        text='↩️ Назад',
         callback_data=csv_tables_call.new('init_csv_filtered',param1=1, param2="none")
     ))
     await SupportManage.inittimecsv.set()
@@ -229,7 +229,7 @@ async def show_table_time_csv_func(call: types.CallbackQuery, callback_data:dict
     )
     inlinekeys = InlineKeyboardMarkup(row_width=2)
     inlinekeys.add(InlineKeyboardButton(
-        text='◀️ Назад',
+        text='↩️ Назад',
         callback_data=csv_tables_call.new('init_csv_filtered',param1=1, param2="none")
     ))
     await SupportManage.accept_time.set()
@@ -338,7 +338,7 @@ async def accept_time_csv_func(message: types.Message, state: FSMContext):
         )
         inlinekeys= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
             [InlineKeyboardButton(
-                text='◀️ Назад',
+                text='↩️ Назад',
                 callback_data='supportbacktomenu'
             )]
         ])

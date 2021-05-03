@@ -36,12 +36,12 @@ async def bot_start(message: types.Message):
         if issupport(message.from_user.id) == True:
             html_text="\n".join(
                 [
-                    ' '
+                    '👇 Следите за новыми запросами! 👇'
                 ]
             )
             supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
                 [InlineKeyboardButton(
-                    text='📄 Обращения',
+                    text='📄 Входящие запросы',
                     callback_data='to_tickets'
                 )],
                 [InlineKeyboardButton(
@@ -249,7 +249,7 @@ async def askcityuser_func(message: types.Message):
     html_text="\n".join(
         [
             '<i><b>'+message.text+'</b>, приятно познакомиться 🙌</i>',
-            '<i>🤖 Я бот-помощник «Крипто Консатинг».</i>',
+            '<i>🤖 Я бот-помощник ООО «Крипто Консатинг».</i>',
             '<i>📡 Я живу в телеграм, а вы?</i>',
             '<i>💎 Наши офисы открыты в нескольких городах России. Если мы еще не открылись в вашем, выберите «Другой» и напишите название.</i>',
         ]
@@ -287,12 +287,12 @@ async def menu_hand(message: types.Message, state: FSMContext):
     if issupport(message.from_user.id) == True:
         html_text="\n".join(
             [
-                ' '
+                '👇 Следите за новыми запросами! 👇'
             ]
         )
         supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
             [InlineKeyboardButton(
-                text='📄 Обращения',
+                text='📄 Входящие запросы',
                 callback_data='to_tickets'
             )],
             [InlineKeyboardButton(
@@ -381,12 +381,12 @@ async def support_menu_hand(message: types.Message, state: FSMContext):
     if issupport(message.from_user.id) == True:
         html_text="\n".join(
             [
-                ' '
+                '👇 Следите за новыми запросами! 👇'
             ]
         )
         supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
             [InlineKeyboardButton(
-                text='📄 Обращения',
+                text='📄 Входящие запросы',
                 callback_data='to_tickets'
             )],
             [InlineKeyboardButton(

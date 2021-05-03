@@ -35,7 +35,7 @@ import sys,os
 pathname = os.path.dirname(sys.argv[0]) 
 if pathname!='':
     pathname=pathname+'/'
-@dp.message_handler(state=ProjectManage.menu, text='💵 Курс BTC/ETH/SST')
+@dp.message_handler(state=ProjectManage.menu, text='💵 Курс SST/BTC/ETH/')
 async def initialize_costs(message: types.Message):
     html_text="\n".join(
         [
@@ -116,38 +116,19 @@ async def initialize_costs(message: types.Message):
 async def initialize_partners(message: types.Message):
     html_text="\n".join(
         [
-            'Coming soon'
+            'Если вы хотите открыть представительство в своем городе, пожалуйста, заполните форму: ',
+            'http://bit.ly/cryptocons_partner'
         ]
     )
-    await bot.send_photo(chat_id=message.from_user.id, caption=html_text, parse_mode='HTML', photo='AgACAgIAAxkBAAITLmB4f7tNKQKOsT5LHH8dp8SquTddAAIPszEbl7fIS6KP_Op5051cAAFtAAGfLgADAQADAgADbQADdxMDAAEfBA')
-
-
-@dp.message_handler(state=ProjectManage.menu, text='💰 100% годовых — фонд SCHUTZ')
-async def schutz_show_func(message: types.Message):
-    html_text="\n".join(
-        [
-            'Уже четыре года мы зарабатываем на криптовалютах. Главных источником заработка является трейдинг — купить по низкой цене, продать по высокой. Но не у каждого это получается и не каждый хочет, потому что это требует усилий, времени и знаний. В таком случае мы предлагаем продукт SCHUTZ от наших партнеров. Если тебе интересно, нажимай "подробнее".'
-        ]
-    )
-
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Видеоразбор с Лерой',
-            url='https://www.youtube.com/watch?v=JCuGKrDcJkE'
+            text='↩️ Назад',
+            callback_data='userbacktomenu'
             ),
-        InlineKeyboardButton(
-            text='Узнать о фонде',
-            url='invest80.ru'
-            )    
-        ],
-    ])
-    inlinemenu.add(InlineKeyboardButton(
-            text='Открыть вклад',
-            url='https://my.schutz.capital/signup?referral=606a97c8ea9d8b8d2dba75b5'
-            ))
-    await bot.send_photo(chat_id=message.from_user.id, caption=html_text, parse_mode='HTML', photo='AgACAgIAAxkBAAITLmB4f7tNKQKOsT5LHH8dp8SquTddAAIPszEbl7fIS6KP_Op5051cAAFtAAGfLgADAQADAgADbQADdxMDAAEfBA')
-    # await bot.send_video_note(chat_id=message.from_user.id,video_note='DQACAgIAAxkBAAIS3mB05-7vIAa7ctMvCEiBEkbpmeRLAALbBwAC_bJRSMg0iIUYG_dTHgQ', reply_markup=inlinemenu )
-    await bot.send_video_note(chat_id=message.from_user.id,video_note=parse_video_by_tag_name('kk_logo_circle'), reply_markup=inlinemenu )
+        ]])
+    await bot.send_photo(chat_id=message.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('topartnerspic'), reply_markup=inlinemenu)
+
+
 
 
 #---------------------------inline----show----currencies--------
@@ -185,11 +166,13 @@ async def aboutususer(message: types.Message):
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Заработать',
+            text='💰 80-100% годовых — фонд SCHUTZ',
             callback_data='earn_about_us'
             ),
+        ],
+        [
         InlineKeyboardButton(
-            text='Консалтинг',
+            text='💎 Консалтинг',
             callback_data='consulting_about_us'
             )
         ],
@@ -221,7 +204,7 @@ async def aboutususer(message: types.Message):
             )
         ],
         [InlineKeyboardButton(
-            text='Назад',
+            text='↩️ Назад',
             callback_data='userbacktomenu'
             ),
         InlineKeyboardButton(
@@ -232,7 +215,7 @@ async def aboutususer(message: types.Message):
     ])
 
     # await bot.send_video(chat_id=message.from_user.id, video='BAACAgIAAxkBAAITBGB08pMf6qokJrqy-Eaaw36PcfKaAAIkDQACjFapS_Ary3cMrUSvHgQ', reply_markup=inlinemenu, caption=html_text)
-    await bot.send_video(chat_id=message.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=message.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 
@@ -242,69 +225,68 @@ async def aboutususer(message: types.Message):
 async def earn_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Уже четыре года мы зарабатываем на криптовалютах. Главных источником заработка является трейдинг — купить по низкой цене, продать по высокой.',
-            'Но не у каждого это получается и не каждый хочет, потому что это требует усилий, времени и знаний. В таком случае мы предлагаем продукт SCHUTZ от наших партнеров. Если тебе интересно, нажимай "подробнее".' 
+            'Уже четыре года мы зарабатываем на криптовалютах. Главным источником заработка является трейдинг — купить по низкой цене, продать по высокой. Но не у каждого это получается и не каждый хочет, потому что это требует усилий, времени и знаний. В таком случае мы предлагаем инвестиционный продукт SCHUTZ от наших партнеров. Выбрав данную опцию, вы сможете получать от 80% годовых чистой прибыли в USDT (цифровой доллар).',
+            'Также наша компания предоставляет консультационные услуги по составлению инвестпортфелей в криптовалюте от 100% годовых, а также большое количиство «сигналов» на покупку и продажу Биткоина.'
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
+            text='Узнать подробнее о фонде',
+            url='https://invest80.ru'
             ),
+        ],
+        [
         InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
+            text='Открыть вклад в SCHUTZ',
+            url='https://schutz.capital/?referral=606a97c8ea9d8b8d2dba75b5'
             )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 @dp.callback_query_handler(text='consulting_about_us', state=[ProjectManage.menu])
 async def consulting_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Мы можем проконсультировать вас по любым вопросам связанным с криптовалютами. Задавайте их нашему консультанту, нажав кнопки внизу.' 
+            'У нас вы сможете получить полный и самый актуальный перечень информации по любым вопросам, связанным с криптовалютой — от хранения, обмена и заработка до аналитики и юридических аспектов. Задавайте их нашему консультанту, нажав кнопки внизу.' 
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='keep_about_us', state=[ProjectManage.menu])
 async def keep_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Криптовалюта — ценный актив и его нужно хранить бережно и в защите от постороннего доступа. Кошельки бывают горячие и холодные, когда криптовалюта хранится на флешке.' 
+            'Каждый день теряется и крадётся большое количество Биткоинов. Эта цифра достигает 1500 биткоинов в день. Многие люди забывают данные от своих кошельков, и теряют доступ к своим активам, а у других людей их активы крадут мошенники. Криптовалюта — ценный актив и его нужно хранить бережно и в защите от постороннего доступа. Наша компания может проконсультировать вас, во-первых, по действиям, которые нужно совершить для организации безопасного хранения вашей криптовалты на любом кошельке. Во-вторых, мы предоставим вам возможность взаимодействия с нашей компанией-партнёром Simba Storage, которая предоставляет услуги по холодному хранению Биткоина в четырех Юрисдикциях: Швейцария, Лихтенштейн, ОАЭ, Новая Зеландия.' 
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 @dp.callback_query_handler(text='learn_about_us', state=[ProjectManage.menu])
@@ -317,40 +299,33 @@ async def learn_about_us_func(call: CallbackQuery):
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 @dp.callback_query_handler(text='analytics_about_us', state=[ProjectManage.menu])
 async def analytics_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Ежедневное тщательное изучение рынка позволяет понимать и прогнозировать возможный рост или падение выбранного актива, что в свою очередь ведет к заработку.' 
+            'Ежедневное тщательное изучение рынка позволяет понимать и прогнозировать возможный рост или падение выбранного актива, что в свою очередь ведет к заработку. Однако без должных знаний рынок криптовалют не принесет прибыли неопытному пользователю, именно поэтому наша компания может предложить вам услуги нашего партнёра — закрытого клуба TRES. TRES — швейцарская консалтинговая компания в сфере криптовалют и блокчейна.',
+            'Покупая подписку TRES, вы получаете право находиться в закрытом клубе (закрытый чат Телеграм), в котором участникам доступны торговые рекомендации по рынку криптовалют, а также еженедельная аналитика рынка криптовалют. За прошлый год, в закрытом клубе было около 90% прибыльных рекомендаций. Если вы хотите самостоятельно взаимодействовать с криптовалютными биржами, покупать и продавать криптовалюту по предлагаемым сигналам, тогда это идеальная возможность для вас. Годовая прибыль составит от 100%.' 
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='yuri_about_us', state=[ProjectManage.menu])
 async def yuri_about_us_func(call: CallbackQuery):
@@ -362,93 +337,190 @@ async def yuri_about_us_func(call: CallbackQuery):
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='blockchain_about_us', state=[ProjectManage.menu])
 async def blockchain_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Если вам нужен смарт-контракт или вы хотите создать свою криптовалюту, мы можем это сделать.' 
+            'Если вам нужен смарт-контракт или вы хотите создать свою криптовалюту, обращайтес к нам. Наши специалисты проконсультируют вас, создадут roadmap, помогут составить техническое задание и исполнят его в лучшем качестве.' 
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='legal_change_about_us', state=[ProjectManage.menu])
 async def legal_change_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'ЦФА (цифровые финансовые активы) — закон, в котором криптовалюта является имуществом. А уже совсем скоро она станет валютой и вы сможете обменивать рубли на нее легко. Пока мы находимся в ожидании лицензии. ' 
+            'ЦФА (цифровые финансовые активы) — закон, в котором криптовалюта является имуществом. А уже совсем скоро она станет валютой и вы сможете обменивать рубли на нее легко. Пока мы находимся в ожидании лицензии.' 
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='audit_about_us', state=[ProjectManage.menu])
 async def audit_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Если вы решили принять участие в криптопроекте сторонней компании, но боитесь им довериться, то вы можете заказать у нас аудит, в котором мы детально опишем весь код контракта и укажем на возможные дыры. ' 
+            'Если вы решили принять участие в криптопроекте сторонней компании, но боитесь им довериться — вы можете заказать у нас аудит, в котором мы детально опишем весь код контракта и укажем на допущенные ошибки, бэкдоры и возможные проблемы.' 
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Назад',
-            callback_data='userbacktomenu'
-            ),
-        InlineKeyboardButton(
-            text='Вперед?',
-            callback_data='userbacktomenu'
-            )    
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
         ],
     ])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('aboutus_video'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
+
+@dp.callback_query_handler(text='userbacktorookie', state=[ProjectManage.menu])
+async def userbacktorookie_about_us_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>💎 «Крипто Консалтинг» — компания, предоставляющая консалтинговые услуги в сфере  криптовалют в России.</b>',
+            '<b>Основной партнер — швейцарский холдинг TRES Group GmbH.</b>',
+            ' ',
+            '🧠 Опыт работы на рынке СНГ с 2017 года. Полностью отслеживаемая история становления компании и более 1000 отзывов клиентов и инвесторов.',
+            ' ',
+            '<b>🗣 Мы оказываем многопрофильную помощь по криптовалютам:</b>',
+            '<i>1. Консультации по покупке/продаже криптовалюты</i>',
+            '<i>2. Восстановление утерянной криптовалюты, доступов к кошелькам</i>',
+            '<i>3. Аналитика и торговые рекомендации</i>',
+            '<i>4. Составление инвестиционных портфелей с доходностью от 101% годовых</i>',
+            '<i>5. Международная юридическая поддержка</i>',
+            '<i>6. Разработка проектов на базе Blockchain</i>',
+            '<i>7. Обучение с «0» до уверенного пользователя (от практикующих инвесторов с опытом от 3-5 лет).</i>',
+        ]
+    )
+
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='💰 80-100% годовых — фонд SCHUTZ',
+            callback_data='earn_about_us'
+            ),
+        ],
+        [
+        InlineKeyboardButton(
+            text='💎 Консалтинг',
+            callback_data='consulting_about_us'
+            )
+        ],
+        [InlineKeyboardButton(
+            text='Хранение',
+            callback_data='keep_about_us'
+            ),
+        InlineKeyboardButton(
+            text='Обучение',
+            callback_data='learn_about_us'
+            )
+        ],
+        [InlineKeyboardButton(
+            text='Аналитика',
+            callback_data='analytics_about_us'
+            ),
+        InlineKeyboardButton(
+            text='Юридические услуги',
+            callback_data='yuri_about_us'
+            )
+        ],
+        [InlineKeyboardButton(
+            text='Blockchain разработка',
+            callback_data='blockchain_about_us'
+            ),
+        InlineKeyboardButton(
+            text='Легальный обмен',
+            callback_data='legal_change_about_us'
+            )
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='userbacktomenu'
+            ),
+        InlineKeyboardButton(
+            text='Аудит крипто-компаний',
+            callback_data='audit_about_us'
+            )    
+        ],
+    ])
+
+    await call.message.delete()
+    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 
 
+@dp.callback_query_handler(state=ProjectManage.menu, text='schutz_about_us')
+async def schutz_about_us_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            'Уже четыре года мы зарабатываем на криптовалютах. Главных источником заработка является трейдинг — купить по низкой цене, продать по высокой. Но не у каждого это получается и не каждый хочет, потому что это требует усилий, времени и знаний. В таком случае мы предлагаем продукт SCHUTZ от наших партнеров. Если тебе интересно, нажимай "подробнее".'
+        ]
+    )
 
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='Видеоразбор с Лерой',
+            url='https://www.youtube.com/watch?v=JCuGKrDcJkE'
+            ),
+        InlineKeyboardButton(
+            text='Узнать о фонде',
+            url='invest80.ru'
+            )    
+        ],
+    ])
+    inlinemenu.add(InlineKeyboardButton(
+            text='Открыть вклад',
+            url='https://my.schutz.capital/signup?referral=606a97c8ea9d8b8d2dba75b5'
+            ))
+    await bot.send_video_note(chat_id=call.from_user.id,video_note=parse_video_by_tag_name('kk_logo_circle') )
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('whatiscrypto'), reply_markup=inlinemenu)
+    # await bot.send_video_note(chat_id=message.from_user.id,video_note='DQACAgIAAxkBAAIS3mB05-7vIAa7ctMvCEiBEkbpmeRLAALbBwAC_bJRSMg0iIUYG_dTHgQ', reply_markup=inlinemenu )
+    
 
+# @dp.callback_query_handler(text='audit_about_us', state=[ProjectManage.menu])
+# async def audit_about_us_func(call: CallbackQuery):
+#     html_text="\n".join(
+#         [
+#             'Если вы решили принять участие в криптопроекте сторонней компании, но боитесь им довериться — вы можете заказать у нас аудит, в котором мы детально опишем весь код контракта и укажем на допущенные ошибки, бэкдоры и возможные проблемы.' 
+#         ]
+#     )
 
-
-
-
+#     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+#         [InlineKeyboardButton(
+#             text='Назад',
+#             callback_data='userbacktorookie'
+#             )  
+#         ],
+#     ])
+#     await call.message.delete()
+#     await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 
@@ -478,12 +550,12 @@ async def initialize_ticket(message: types.Message):
             '<b>Техническая поддержка клиентов</b>',
             '💎 Крипто Консалтинг',
             '',
-            '❓Задайте свой вопрос, или подробно опишите возникшую проблему. Мы постараемся максимально быстро ответить.'
+            '❓ Задайте вопрос или подробно опишите возникшую проблему.'
         ]
     )
     backbutton=InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
-            text='⬅ Вернуться в меню',
+            text='↩️ в меню',
             callback_data='userbacktomenu'
         )]
     ])
@@ -514,7 +586,7 @@ async def initializing_support (message: types.Message):
     
     html_text="\n".join(
         [
-            '<b>Момент, ищем свободного оператора 😊</b>',
+            '<b>Момент, на ваш вопрос ответит оператор, ищем свободного 😊</b>',
             'ID вашего обращения '+ticketid
         ]
     )
@@ -525,12 +597,12 @@ async def initializing_support (message: types.Message):
     sups = staff_collection.find({"staffrole":"support","notified":"none","city_code":user['citytag']})
     gotgot = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
-            text='Понял, принял',
+            text='Окей',
             callback_data='ivegotit'
         )]
     ]) 
     for x in sups:
-        await bot.send_photo(chat_id=x['user_id'],caption='Поступило новое обращение, пожалуйста, проверьте',parse_mode='HTML', reply_markup=gotgot, photo=photoparser('new_question'))
+        await bot.send_photo(chat_id=x['user_id'],parse_mode='HTML', reply_markup=gotgot, photo=photoparser('new_question'))
 
 
 
@@ -579,12 +651,20 @@ async def end_support(message: types.Message):
         if thisicket['operator']!='none':
             html_text2="\n".join(
                 [
-                    '<b>Бот КриптоКонсалтинг:</b>',
+                    '<b>🤖 Бот КриптоКонсалтинг:</b>',
                     '',
                     'Клиент завершил диалог, нажмите на ❌ Завершить'
                 ]
             )
-            await bot.send_photo(chat_id=thisicket['operator'],caption=html_text2,parse_mode='HTML', photo=photoparser('clientfinished'))
+            endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+                [InlineKeyboardButton(
+                    text='❌ Завершить',
+                    callback_data='operator_end_inline_ticket'
+                )]
+            ]) 
+            await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+            await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+            
     thisuser=user_collection.find_one({'user_id':message.from_user.id})
     html_text="\n".join(
         [
@@ -605,11 +685,11 @@ async def end_support(message: types.Message):
     )
     await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text,parse_mode='HTML',reply_markup=defaultmenu)
     await ProjectManage.menu.set()
-@dp.message_handler(state=SupportManage.onair, text='❌ Завершить')
-async def end_supportbysupport(message: types.Message):
-    thisicket=ticket_collection.find_one({"operator": message.from_user.id,"isopen": "onair"}) 
+@dp.callback_query_handler(state=SupportManage.onair, text='operator_end_inline_ticket')
+async def end_supportbysupport(call: CallbackQuery):
+    thisicket=ticket_collection.find_one({"operator": call.from_user.id,"isopen": "onair"}) 
     if thisicket!=None:
-        ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator"}})
+        ticket_collection.update({"operator": call.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator"}})
         await bot.send_message(chat_id=channelid, text=thisicket['messagedata'])
         html_text2="\n".join(
             [
@@ -623,15 +703,15 @@ async def end_supportbysupport(message: types.Message):
             )]
         ]) 
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
-        await bot.send_message(chat_id=thisicket['userid'],text='Спасибо за обращение!',parse_mode='HTML',reply_markup=clientgotomenu)
+        await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
     html_text="\n".join(
         [
-            ' '
+            '👇 Следите за новыми запросами! 👇'
         ]
     )
     supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
-            text='📄 Обращения',
+            text='📄 Входящие запросы',
             callback_data='to_tickets'
         )],
         [InlineKeyboardButton(
@@ -640,19 +720,19 @@ async def end_supportbysupport(message: types.Message):
         )]
     ])
 
-    if isadmin(message.from_user.id)== True:
+    if isadmin(call.from_user.id)== True:
         supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админапанель',
+            text='💎 Админпанель',
             callback_data='to_admin_menu'
         ))
-    if support_role_check(message.from_user.id)== "PLUS":
+    if support_role_check(call.from_user.id)== "PLUS":
         supportmenubase.add(InlineKeyboardButton(
             text='🗄 Отчеты',
             callback_data='to_csv_tables'
         ))      
-    await message.answer(text='Вы закрыли обращение - так держать!',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
-
-    await message.answer_photo(photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
+    # await bot.send_message(chat_id=call.from_user.id,text='Диалог завершен',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
+    await bot.send_photo(chat_id=call.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
+    await call.message.delete()
     await SupportManage.menu.set()   
   
 @dp.callback_query_handler(text='to_client_menu', state=ProjectManage.awaitingsup)
@@ -692,7 +772,7 @@ async def tonewticketsfunc(call:types.CallbackQuery):
     opentickets.add(InlineKeyboardButton(text="⬅ Вернуться к обращениям",callback_data='to_tickets'))
 
     # await call.message.edit_text(text="<b>📛 Новые: 🗣"+str(newticket.count())+"</b>",reply_markup=opentickets)
-    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("waiting"), caption="<b>📛 Новые: 🗣"+str(newticket.count())+"</b>"), reply_markup=opentickets) 
+    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("waiting"), caption="<b>🔥 Новые: 🗣"+str(newticket.count())+"</b>"), reply_markup=opentickets) 
 
 @dp.callback_query_handler(text='tourpaused', state=SupportManage.menu)
 async def tourpausedticketsfunc(call:types.CallbackQuery):
@@ -708,7 +788,7 @@ async def tourpausedticketsfunc(call:types.CallbackQuery):
     opentickets.add(InlineKeyboardButton(text="⬅ Вернуться к обращениям",callback_data='to_tickets'))
 
     # await call.message.edit_text(text="<b>На паузе: 🗣"+str(pausedticket.count())+"</b>",reply_markup=opentickets)
-    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("waiting"), caption="<b>На паузе: 🗣"+str(pausedticket.count())+"</b>"), reply_markup=opentickets) 
+    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("waiting"), caption="<b>💭 Открытые: 🗣"+str(pausedticket.count())+"</b>"), reply_markup=opentickets) 
 
 
 @dp.callback_query_handler(text='to_tickets', state=SupportManage.menu)
@@ -719,31 +799,31 @@ async def to_tickets_func(call:types.CallbackQuery):
     created=ticket_collection.count_documents({'isopen':'created', 'operator':'none', "citytag": {"$in": operator['city_code'][1:]}})
     paused=ticket_collection.count_documents({'isopen':'onpause', 'operator':call.from_user.id, "citytag": {"$in":operator['city_code'][1:]}}) 
     updatebutton=InlineKeyboardButton(
-        text='Обновить',
+        text='🔄 Обновить',
         callback_data="to_tickets"
     )
     inlinekeyb.add(updatebutton)
     if created>0:
         createdbutton=InlineKeyboardButton(
-            text='Новые обращения',
+            text='🔥 Новые',
             callback_data="tonewtickets"
         )
         inlinekeyb.add(createdbutton)
     if paused>0:
         pausedbutton=InlineKeyboardButton(
-            text='Открытые вами',
+            text='💭 Открытые',
             callback_data="tourpaused"
         )
         inlinekeyb.add(pausedbutton)
     html_text="\n".join(
         [
-            '<b>📛 Новые: 🗣'+ str(created)+'</b>',
-            'Открытых: 🗣'+str(paused)
+            '<b>🔥 Новые: 🗣'+ str(created)+'</b>',
+            '<b>💭 Открытые: 🗣'+str(paused)+'</b>'
 
         ]
     )
     
-    inlinekeyb.add(InlineKeyboardButton(text="⬅ Вернуться в меню",callback_data='supportbacktomenu'))
+    inlinekeyb.add(InlineKeyboardButton(text="↩️ в меню",callback_data='supportbacktomenu'))
     if created == 0 and paused == 0:
         # await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('silent') )
         await call.message.edit_media(media=InputMediaPhoto(media=photoparser("silent"), caption=html_text), reply_markup=inlinekeyb) 
@@ -757,12 +837,12 @@ async def to_tickets_func(call:types.CallbackQuery):
 async def supportbacktomenufunc(call:types.CallbackQuery):
     html_text="\n".join(
         [
-            ' '
+            '👇 Следите за новыми запросами! 👇'
         ]
     )
     supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
-            text='📄 Обращения',
+            text='📄 Входящие запросы',
             callback_data='to_tickets'
         )],
         [InlineKeyboardButton(
@@ -772,7 +852,7 @@ async def supportbacktomenufunc(call:types.CallbackQuery):
     ])
     if isadmin(call.from_user.id)== True:
         supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админапанель',
+            text='💎 Админпанель',
             callback_data='to_admin_menu'
         ))
     if support_role_check(call.from_user.id)== "PLUS":
@@ -806,11 +886,11 @@ async def adminmenustart(call: types.CallbackQuery):
             callback_data=show_cities_pages.new("showcities",page=1)
         )],
         [InlineKeyboardButton(
-            text='⁉ База знаний',
+            text='📚 Новичку',
             callback_data=knowledge_list_call.new("show_faq",param1="main", param2="none")
         )],
         [InlineKeyboardButton(
-            text='◀️ главное меню',
+            text='↩️ в меню',
             callback_data='supportbacktomenu'
         )],
     ])
@@ -1096,7 +1176,7 @@ async def system_operator_open_func(call: types.CallbackQuery, callback_data:dic
             callback_data=show_support_pages.new("deleteoperatorinit",page=x["user_id"])
         )],
         [InlineKeyboardButton(
-            text='◀️ к списку операторов',
+            text='↩️ к списку операторов',
             callback_data=show_support_pages.new("showsuppages",page=1)
         )]
     ])
@@ -1119,7 +1199,7 @@ async def delete_operator_init(call: types.CallbackQuery, callback_data:dict):
             callback_data=show_support_pages.new('deleteoperatoryes',page=x["user_id"])
         )],
         [InlineKeyboardButton(
-            text='◀️ Нет, оставить',
+            text='↩️ Нет, оставить',
             callback_data=show_support_pages.new("openoperator",page=x["user_id"])
         )]
     ])
@@ -1139,7 +1219,7 @@ async def delete_operator_done(call: types.CallbackQuery, callback_data:dict):
     )
     operatorbuttons = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
-            text='◀️ назад к списку операторов',
+            text='↩️ назад к списку операторов',
             callback_data=show_support_pages.new('showsuppages',page=1)
         )],
     ])
@@ -1347,7 +1427,8 @@ async def providing_adding_operator_tosys(call:types.CallbackQuery, callback_dat
         "notified": "none",
         "city_code":['none'],
         "callmeas":'none',
-        "role":callback_data.get("operator_role")})
+        "role":callback_data.get("operator_role"),
+        'photo_avatar':'none'})
         html_text="\n".join(
             [
                 'Вы успешно зарегистрированы в системе как оператор!',
@@ -1388,7 +1469,7 @@ async def showcard(call:types.CallbackQuery, callback_data:dict):
         )],
         [
         InlineKeyboardButton(
-            text='⬅️ назад',
+            text='↩️ назад',
             callback_data='tonewtickets'
         ),]
     ])
@@ -1421,8 +1502,12 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
         ]
     ) 
     if thisicket["isopen"]=="created":
-        print(thisoperator['callmeas'])
-        await bot.send_message(chat_id=thisicket['userid'],text='🙋‍♂️ <b>'+thisoperator['callmeas']+'</b> С вами на связи',parse_mode='HTML')
+        # print(thisoperator['callmeas'])
+        if thisoperator['photo_avatar']!='none':
+            await bot.send_photo(chat_id=thisicket['userid'],caption='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML', photo=thisoperator['photo_avatar'])
+        else:    
+            await bot.send_message(chat_id=thisicket['userid'],text='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML')
+        
     await call.message.delete()
     await bot.send_photo(chat_id=call.from_user.id,caption=html_text,parse_mode='HTML', reply_markup=operatorcontrol,photo=photoparser('changed'))
     ticket_collection.find_and_modify(
@@ -1445,7 +1530,7 @@ async def changeticket_supportbysupport(message: types.Message):
     )
     supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
-            text='📄 Обращения',
+            text='📄 Входящие запросы',
             callback_data='to_tickets'
         )],
         [InlineKeyboardButton(
@@ -1455,7 +1540,7 @@ async def changeticket_supportbysupport(message: types.Message):
     ])
     if isadmin(message.from_user.id)== True:
         supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админапанель',
+            text='💎 Админпанель',
             callback_data='to_admin_menu'
         ))
     if support_role_check(message.from_user.id)== "PLUS":

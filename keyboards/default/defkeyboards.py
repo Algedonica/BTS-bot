@@ -10,12 +10,12 @@ defaultmenu = ReplyKeyboardMarkup(
         [
             KeyboardButton(text='🗣 Получить консультацию')
         ],
+        # [
+        #     KeyboardButton(text='💰 100% годовых — фонд SCHUTZ')
+        # ],
         [
-            KeyboardButton(text='💰 100% годовых — фонд SCHUTZ')
-        ],
-        [
-            KeyboardButton(text='⁉️ База знаний'),
-            KeyboardButton(text='💵 Курс BTC/ETH/SST'),
+            KeyboardButton(text='📚 Новичку'),
+            KeyboardButton(text='💵 Курс SST/BTC/ETH/'),
         ]
     ],
     resize_keyboard=True
