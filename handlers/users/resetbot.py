@@ -26,8 +26,48 @@ from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operat
 async def resetbot_byuser(message: types.Message):
     thisicket=ticket_collection.find_one({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]})
     if thisicket!=None:
-        ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient"}})
-        await bot.send_message(chat_id=channelid, text=thisicket['messagedata'])
+        counttickets=ticket_collection.find().count()+1
+
+        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+        operatorcallmeas=operatornickname['callmeas']
+        operatornickname=operatornickname['username']
+
+        clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
+        clientcallmeas=clientnickname['callmeas']
+        clientnickname=clientnickname['username']
+
+        if operatornickname=='none':
+            operatornickname='Без ника'
+        else:
+            operatornickname="@"+operatornickname
+
+        if clientnickname=='none':
+            clientnickname='Без ника'
+        else:
+            clientnickname="@"+clientnickname
+
+        datamessagehere = "\n".join(
+            [
+                '<b>Обращение № '+str(counttickets)+'</b>',
+                thisicket['title'],
+                '',
+                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
+                '',
+                '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                thisicket['ticketid'],
+                '',
+                thisicket["messagedata"],
+                '',
+                '=========================',
+                '',
+                "Диалог закрыт клиентом ",
+                "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+
+            ]
+        ) 
+        ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere}})
+        await bot.send_message(chat_id=channelid, text=datamessagehere)
 
 
         if thisicket['operator']!='none':
@@ -59,11 +99,14 @@ async def resetbot_byuser(message: types.Message):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+            '———',
+            '',
+            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
             '',
             parse_message_by_tag_name(thisuser['citytag'])
         ]
     )
+    
     await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text,parse_mode='HTML',reply_markup=defaultmenu)
     await ProjectManage.menu.set()
 
@@ -85,8 +128,48 @@ async def resetbot_byuser(message: types.Message):
 async def resetbot_byoperator(message: types.Message, state: FSMContext):
     thisicket=ticket_collection.find_one({"operator": message.from_user.id,"isopen": "onair"}) 
     if thisicket!=None:
-        ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator"}})
-        await bot.send_message(chat_id=channelid, text=thisicket['messagedata'])
+        counttickets=ticket_collection.find().count()+1
+
+        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+        operatorcallmeas=operatornickname['callmeas']
+        operatornickname=operatornickname['username']
+
+        clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
+        clientcallmeas=clientnickname['callmeas']
+        clientnickname=clientnickname['username']
+
+        if operatornickname=='none':
+            operatornickname='Без ника'
+        else:
+            operatornickname="@"+operatornickname
+
+        if clientnickname=='none':
+            clientnickname='Без ника'
+        else:
+            clientnickname="@"+clientnickname
+
+        datamessagehere = "\n".join(
+            [
+                '<b>Обращение № '+str(counttickets)+'</b>',
+                thisicket['title'],
+                '',
+                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
+                '',
+                '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                thisicket['ticketid'],
+                '',
+                thisicket["messagedata"],
+                '',
+                '=========================',
+                '',
+                "Диалог закрыт оператором ",
+                "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+
+            ]
+        )
+        ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
+        
         html_text2="\n".join(
             [
                 ' ',
@@ -100,6 +183,7 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
         ]) 
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
         await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
+        await bot.send_message(chat_id=channelid, text=datamessagehere)
     html_text="\n".join(
         [
             '👇 Следите за новыми запросами! 👇'
@@ -126,7 +210,7 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
             text='🗄 Отчеты',
             callback_data='to_csv_tables'
         ))      
-    # await bot.send_message(chat_id=call.from_user.id,text='Диалог завершен',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
+    await bot.send_message(chat_id=message.from_user.id,text='Успешно',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
     await bot.send_photo(chat_id=message.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     await state.reset_state()
     await SupportManage.menu.set()

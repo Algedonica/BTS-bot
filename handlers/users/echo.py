@@ -154,22 +154,10 @@ async def aboutususer(message: types.Message):
             '🧠 Опыт работы на рынке СНГ с 2017 года. Полностью отслеживаемая история становления компании и более 1000 отзывов клиентов и инвесторов.',
             ' ',
             '<b>🗣 Мы оказываем многопрофильную помощь по криптовалютам:</b>',
-            '<i>1. Консультации по покупке/продаже криптовалюты</i>',
-            '<i>2. Восстановление утерянной криптовалюты, доступов к кошелькам</i>',
-            '<i>3. Аналитика и торговые рекомендации</i>',
-            '<i>4. Составление инвестиционных портфелей с доходностью от 101% годовых</i>',
-            '<i>5. Международная юридическая поддержка</i>',
-            '<i>6. Разработка проектов на базе Blockchain</i>',
-            '<i>7. Обучение с «0» до уверенного пользователя (от практикующих инвесторов с опытом от 3-5 лет).</i>',
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='💰 80-100% годовых — фонд SCHUTZ',
-            callback_data='earn_about_us'
-            ),
-        ],
         [
         InlineKeyboardButton(
             text='💎 Консалтинг',
@@ -177,40 +165,45 @@ async def aboutususer(message: types.Message):
             )
         ],
         [InlineKeyboardButton(
-            text='Хранение',
-            callback_data='keep_about_us'
+            text='💰 80-101% годовых — фонд SCHUTZ',
+            callback_data='earn_about_us'
             ),
-        InlineKeyboardButton(
-            text='Обучение',
-            callback_data='learn_about_us'
-            )
         ],
         [InlineKeyboardButton(
             text='Аналитика',
             callback_data='analytics_about_us'
             ),
-        InlineKeyboardButton(
+            InlineKeyboardButton(
+            text='Легальный обмен',
+            callback_data='legal_change_about_us'
+            ),
+        ],
+        [InlineKeyboardButton(
+            text='Хранение',
+            callback_data='keep_about_us'
+            ),
+            InlineKeyboardButton(
             text='Юридические услуги',
             callback_data='yuri_about_us'
-            )
+            ),
         ],
         [InlineKeyboardButton(
             text='Blockchain разработка',
             callback_data='blockchain_about_us'
             ),
-        InlineKeyboardButton(
-            text='Легальный обмен',
-            callback_data='legal_change_about_us'
-            )
+            InlineKeyboardButton(
+            text='Аудит криптокомпаний',
+            callback_data='audit_about_us'
+            ) ,
         ],
         [InlineKeyboardButton(
             text='↩️ Назад',
             callback_data='userbacktomenu'
             ),
-        InlineKeyboardButton(
-            text='Аудит крипто-компаний',
-            callback_data='audit_about_us'
-            )    
+            InlineKeyboardButton(
+            text='Обучение',
+            callback_data='learn_about_us'
+            )   
         ],
     ])
 
@@ -256,7 +249,7 @@ async def earn_about_us_func(call: CallbackQuery):
 async def consulting_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'У нас вы сможете получить полный и самый актуальный перечень информации по любым вопросам, связанным с криптовалютой — от хранения, обмена и заработка до аналитики и юридических аспектов. Задавайте их нашему консультанту, нажав кнопки внизу.' 
+            'У нас вы можете получить полный и самый актуальный перечень информации по любым вопросам связанным с криптовалютой: от хранения, обмена, заработка до аналитики и юридических аспектов. Задавайте их нашему консультанту, нажав «🗣 Получить консультацию»‎.' 
         ]
     )
 
@@ -274,7 +267,8 @@ async def consulting_about_us_func(call: CallbackQuery):
 async def keep_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Каждый день теряется и крадётся большое количество Биткоинов. Эта цифра достигает 1500 биткоинов в день. Многие люди забывают данные от своих кошельков, и теряют доступ к своим активам, а у других людей их активы крадут мошенники. Криптовалюта — ценный актив и его нужно хранить бережно и в защите от постороннего доступа. Наша компания может проконсультировать вас, во-первых, по действиям, которые нужно совершить для организации безопасного хранения вашей криптовалты на любом кошельке. Во-вторых, мы предоставим вам возможность взаимодействия с нашей компанией-партнёром Simba Storage, которая предоставляет услуги по холодному хранению Биткоина в четырех Юрисдикциях: Швейцария, Лихтенштейн, ОАЭ, Новая Зеландия.' 
+            'Каждый день теряется и крадётся большое количество Биткоинов. Эта цифра достигает 1500 биткоинов в день. Многие люди забывают данные от своих кошельков и теряют доступ к активам, а у других крадут активы мошенники. Криптовалюта — ценный актив и его нужно хранить бережно, в защите от постороннего доступа.',
+            'Наша компания может проконсультировать вас по действиям для организации безопасного хранения криптовалюты на любом кошельке. Во-вторых мы предоставим возможность взаимодействия с нашей компанией-партнёром Simba Storage, которая предоставляет услуги по холодному хранению Биткоина в четырех Юрисдикциях: Швейцария, Лихтенштейн, ОАЭ, Новая Зеландия.'
         ]
     )
 
@@ -312,8 +306,8 @@ async def learn_about_us_func(call: CallbackQuery):
 async def analytics_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Ежедневное тщательное изучение рынка позволяет понимать и прогнозировать возможный рост или падение выбранного актива, что в свою очередь ведет к заработку. Однако без должных знаний рынок криптовалют не принесет прибыли неопытному пользователю, именно поэтому наша компания может предложить вам услуги нашего партнёра — закрытого клуба TRES. TRES — швейцарская консалтинговая компания в сфере криптовалют и блокчейна.',
-            'Покупая подписку TRES, вы получаете право находиться в закрытом клубе (закрытый чат Телеграм), в котором участникам доступны торговые рекомендации по рынку криптовалют, а также еженедельная аналитика рынка криптовалют. За прошлый год, в закрытом клубе было около 90% прибыльных рекомендаций. Если вы хотите самостоятельно взаимодействовать с криптовалютными биржами, покупать и продавать криптовалюту по предлагаемым сигналам, тогда это идеальная возможность для вас. Годовая прибыль составит от 100%.' 
+            'Ежедневное тщательное изучение рынка позволяет понимать и прогнозировать возможный рост или падение выбранного актива, что в свою очередь ведет к заработку. Однако без должных знаний рынок криптовалют не принесет прибыли неопытному пользователю. Именно поэтому мы предлагает услуги нашего партнёра — закрытого клуба <b>TRES</b>.',
+            '<b>TRES</b> — швейцарская консалтинговая компания в сфере криптовалют и блокчейн. Покупая подписку <b>TRES</b>, вы получаете право находиться в закрытом клубе (закрытый чат Telegram), в котором участникам доступны торговые рекомендации по рынку криптовалют, а также еженедельная аналитика рынка криптовалют. За прошлый год в закрытом клубе было около 90% прибыльных рекомендаций. Если вы хотите самостоятельно взаимодействовать с криптовалютными биржами, покупать и продавать криптовалюту по предлагаемым сигналам, тогда это идеальная возможность для вас. Годовая прибыль составит от 100%.'
         ]
     )
 
@@ -331,7 +325,7 @@ async def analytics_about_us_func(call: CallbackQuery):
 async def yuri_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Если вы хотите платить налоги с криптоактивов или открыть компанию с уставным капиталом в криптовалюте, в той юрисдикции, которая это предусматривает (Швейцария, Лихтенштейн, ОАЭ), мы сможем провести вас по всему пути от точки А до точки Б.' 
+            'Если вы хотите платить налоги с криптоактивов или открыть компанию с уставным капиталом в криптовалюте в той юрисдикции, которая это предусматривает (Швейцария, Лихтенштейн, ОАЭ), мы можем провести вас по всему пути от точки А до точки Б.' 
         ]
     )
 
@@ -349,7 +343,7 @@ async def yuri_about_us_func(call: CallbackQuery):
 async def blockchain_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Если вам нужен смарт-контракт или вы хотите создать свою криптовалюту, обращайтес к нам. Наши специалисты проконсультируют вас, создадут roadmap, помогут составить техническое задание и исполнят его в лучшем качестве.' 
+            'Если вам нужен смарт-контракт или вы хотите создать свою криптовалюту, обращайтесь к нам. Наши специалисты проконсультируют вас, создадут roadmap, помогут составить техническое задание и исполнят его в лучшем качестве.' 
         ]
     )
 
@@ -367,7 +361,7 @@ async def blockchain_about_us_func(call: CallbackQuery):
 async def legal_change_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'ЦФА (цифровые финансовые активы) — закон, в котором криптовалюта является имуществом. А уже совсем скоро она станет валютой и вы сможете обменивать рубли на нее легко. Пока мы находимся в ожидании лицензии.' 
+            '<b>ЦФА</b> (цифровые финансовые активы) — закон, в котором криптовалюта является имуществом. А уже совсем скоро станет признанной валютой и вы сможете легко обменивать ее на рубли. Пока мы находимся в ожидании лицензии. Оставайтесь с нами и узнаете об запуске обменника первым!' 
         ]
     )
 
@@ -410,22 +404,10 @@ async def userbacktorookie_about_us_func(call: CallbackQuery):
             '🧠 Опыт работы на рынке СНГ с 2017 года. Полностью отслеживаемая история становления компании и более 1000 отзывов клиентов и инвесторов.',
             ' ',
             '<b>🗣 Мы оказываем многопрофильную помощь по криптовалютам:</b>',
-            '<i>1. Консультации по покупке/продаже криптовалюты</i>',
-            '<i>2. Восстановление утерянной криптовалюты, доступов к кошелькам</i>',
-            '<i>3. Аналитика и торговые рекомендации</i>',
-            '<i>4. Составление инвестиционных портфелей с доходностью от 101% годовых</i>',
-            '<i>5. Международная юридическая поддержка</i>',
-            '<i>6. Разработка проектов на базе Blockchain</i>',
-            '<i>7. Обучение с «0» до уверенного пользователя (от практикующих инвесторов с опытом от 3-5 лет).</i>',
         ]
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='💰 80-100% годовых — фонд SCHUTZ',
-            callback_data='earn_about_us'
-            ),
-        ],
         [
         InlineKeyboardButton(
             text='💎 Консалтинг',
@@ -433,40 +415,45 @@ async def userbacktorookie_about_us_func(call: CallbackQuery):
             )
         ],
         [InlineKeyboardButton(
-            text='Хранение',
-            callback_data='keep_about_us'
+            text='💰 80-101% годовых — фонд SCHUTZ',
+            callback_data='earn_about_us'
             ),
-        InlineKeyboardButton(
-            text='Обучение',
-            callback_data='learn_about_us'
-            )
         ],
         [InlineKeyboardButton(
             text='Аналитика',
             callback_data='analytics_about_us'
             ),
-        InlineKeyboardButton(
+            InlineKeyboardButton(
+            text='Легальный обмен',
+            callback_data='legal_change_about_us'
+            ),
+        ],
+        [InlineKeyboardButton(
+            text='Хранение',
+            callback_data='keep_about_us'
+            ),
+            InlineKeyboardButton(
             text='Юридические услуги',
             callback_data='yuri_about_us'
-            )
+            ),
         ],
         [InlineKeyboardButton(
             text='Blockchain разработка',
             callback_data='blockchain_about_us'
             ),
-        InlineKeyboardButton(
-            text='Легальный обмен',
-            callback_data='legal_change_about_us'
-            )
+            InlineKeyboardButton(
+            text='Аудит криптокомпаний',
+            callback_data='audit_about_us'
+            ) ,
         ],
         [InlineKeyboardButton(
             text='↩️ Назад',
             callback_data='userbacktomenu'
             ),
-        InlineKeyboardButton(
-            text='Аудит крипто-компаний',
-            callback_data='audit_about_us'
-            )    
+            InlineKeyboardButton(
+            text='Обучение',
+            callback_data='learn_about_us'
+            )   
         ],
     ])
 
@@ -579,8 +566,8 @@ async def initializing_support (message: types.Message):
         "operator": "none",
         "title": message.text,
         "userid":  message.from_user.id,
-        "messagedata":"-------started at "+datetime.now().strftime("%d/%m/%Y %I:%M%p")+"--------",
-        "messagedata_timed":"----",
+        "messagedata":"",
+        "messagedata_timed":"",
         "messagedata_operator":"",
         "citytag":user['citytag']})
     
@@ -621,7 +608,9 @@ async def user_come_to_menu(call:types.CallbackQuery):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+            '———',
+            '',
+            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
             '',
             parse_message_by_tag_name(thisuser['citytag'])
         ]
@@ -643,9 +632,49 @@ async def igotiwork(call:CallbackQuery):
 async def end_support(message: types.Message):
     thisicket=ticket_collection.find_one({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]})
     if thisicket!=None:
-        ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient"}})
+        counttickets=ticket_collection.find().count()+1
+
+        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+        operatorcallmeas=operatornickname['callmeas']
+        operatornickname=operatornickname['username']
+
+        clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
+        clientcallmeas=clientnickname['callmeas']
+        clientnickname=clientnickname['username']
+
+        if operatornickname=='none':
+            operatornickname='Без ника'
+        else:
+            operatornickname="@"+operatornickname
+
+        if clientnickname=='none':
+            clientnickname='Без ника'
+        else:
+            clientnickname="@"+clientnickname
+
+        datamessagehere = "\n".join(
+            [
+                '<b>Обращение № '+str(counttickets)+'</b>',
+                thisicket['title'],
+                '',
+                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
+                '',
+                '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                thisicket['ticketid'],
+                '',
+                thisicket["messagedata"],
+                '',
+                '=========================',
+                '',
+                "Диалог закрыт клиентом ",
+                "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+
+            ]
+        ) 
+        ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere}})
+        await bot.send_message(chat_id=channelid, text=datamessagehere)
         
-        await bot.send_message(chat_id=channelid, text=thisicket['messagedata'])
 
 
         if thisicket['operator']!='none':
@@ -664,7 +693,8 @@ async def end_support(message: types.Message):
             ]) 
             await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
             await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
-            
+        
+         
     thisuser=user_collection.find_one({'user_id':message.from_user.id})
     html_text="\n".join(
         [
@@ -678,13 +708,35 @@ async def end_support(message: types.Message):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+            '———',
+            '',
+            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
             '',
             parse_message_by_tag_name(thisuser['citytag'])
         ]
     )
+    await message.answer_photo(photo=photoparser('operatorticketfinished') ,parse_mode='HTML')
     await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text,parse_mode='HTML',reply_markup=defaultmenu)
     await ProjectManage.menu.set()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @dp.callback_query_handler(state=SupportManage.onair, text='operator_end_inline_ticket')
 async def end_supportbysupport(call: CallbackQuery):
     thisicket=ticket_collection.find_one({"operator": call.from_user.id,"isopen": "onair"}) 
@@ -735,6 +787,124 @@ async def end_supportbysupport(call: CallbackQuery):
     await call.message.delete()
     await SupportManage.menu.set()   
   
+@dp.message_handler(state=SupportManage.onair, text='❌ Завершить')
+async def end_supportbysupport(message: types.Message):
+    thisicket=ticket_collection.find_one({"operator": message.from_user.id,"isopen": "onair"}) 
+    if thisicket!=None:
+        counttickets=ticket_collection.find().count()+1
+
+        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+        operatorcallmeas=operatornickname['callmeas']
+        operatornickname=operatornickname['username']
+
+        clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
+        clientcallmeas=clientnickname['callmeas']
+        clientnickname=clientnickname['username']
+
+        if operatornickname=='none':
+            operatornickname='Без ника'
+        else:
+            operatornickname="@"+operatornickname
+
+        if clientnickname=='none':
+            clientnickname='Без ника'
+        else:
+            clientnickname="@"+clientnickname
+
+        datamessagehere = "\n".join(
+            [
+                '<b>Обращение № '+str(counttickets)+'</b>',
+                thisicket['title'],
+                '',
+                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
+                '',
+                '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                thisicket['ticketid'],
+                '',
+                thisicket["messagedata"],
+                '',
+                '=========================',
+                '',
+                "Диалог закрыт оператором ",
+                "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+
+            ]
+        )
+        ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
+        
+        html_text2="\n".join(
+            [
+                ' ',
+            ]
+        )
+        clientgotomenu= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='✅ Завершить и выйти в меню',
+                callback_data='to_client_menu'
+            )]
+        ]) 
+        
+        await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
+        await bot.send_message(chat_id=channelid, text=datamessagehere)
+    html_text="\n".join(
+        [
+            '👇 Следите за новыми запросами! 👇'
+        ]
+    )
+    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='📄 Входящие запросы',
+            callback_data='to_tickets'
+        )],
+        [InlineKeyboardButton(
+            text='⚙️ Настройки (в разработке)',
+            callback_data='to_settings'
+        )]
+    ])
+
+    if isadmin(message.from_user.id)== True:
+        supportmenubase.add(InlineKeyboardButton(
+            text='💎 Админпанель',
+            callback_data='to_admin_menu'
+        ))
+    if support_role_check(message.from_user.id)== "PLUS":
+        supportmenubase.add(InlineKeyboardButton(
+            text='🗄 Отчеты',
+            callback_data='to_csv_tables'
+        ))      
+    await bot.send_message(chat_id=message.from_user.id,text='Диалог завершен',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
+    await bot.send_photo(chat_id=message.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
+    
+    await SupportManage.menu.set()   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @dp.callback_query_handler(text='to_client_menu', state=ProjectManage.awaitingsup)
 async def clientgogotomenucallback(call: CallbackQuery):
     thisuser=user_collection.find_one({'user_id':call.from_user.id})
@@ -750,7 +920,9 @@ async def clientgogotomenucallback(call: CallbackQuery):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+            '———',
+            '',
+            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
             '',
             parse_message_by_tag_name(thisuser['citytag'])
         ]
@@ -1473,7 +1645,14 @@ async def showcard(call:types.CallbackQuery, callback_data:dict):
             callback_data='tonewtickets'
         ),]
     ])
-    await call.message.edit_media(media=InputMediaPhoto(media=thisuser['user_photo'], caption=html_text), reply_markup=inlinekeyb)
+    photos=await bot.get_user_profile_photos(user_id=thisicket['userid'], limit=1)
+
+    if photos.total_count>0:
+        photofinal=photos.photos[0][0].file_id
+    else:
+        photofinal=thisuser['user_photo']
+    
+    await call.message.edit_media(media=InputMediaPhoto(media=photofinal, caption=html_text), reply_markup=inlinekeyb)
     # await call.message.edit_text(text=html_text, reply_markup=inlinekeyb)
 
 @dp.callback_query_handler(ticket_callback.filter(command='jumptoclient'), state=SupportManage.menu)
@@ -1496,11 +1675,14 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
     datamessagehere = "\n".join(
         [
             thisicket["messagedata"],
+            '',
             thisicket["messagedata_timed"],
-            "---------operator joined at "+datetime.now().strftime("%d/%m/%Y %I:%M%p")+"--------------"
+            '',
+            "Оператор подключился <i>("+datetime.now().strftime("%d.%m.%Y / %H:%M")+")</i>"
 
         ]
     ) 
+    
     if thisicket["isopen"]=="created":
         # print(thisoperator['callmeas'])
         if thisoperator['photo_avatar']!='none':
@@ -1512,16 +1694,20 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
     await bot.send_photo(chat_id=call.from_user.id,caption=html_text,parse_mode='HTML', reply_markup=operatorcontrol,photo=photoparser('changed'))
     ticket_collection.find_and_modify(
         query={"ticketid":callback_data.get("ticketid"), "$or":[{'isopen':'created'},{'isopen':'onpause'}]},
-        update={"$set":{"isopen":"onair","operator":call.from_user.id, "messagedata_timed":"---", "messagedata": datamessagehere, 'messagedata_operator': ''}}
+        update={"$set":{"isopen":"onair","operator":call.from_user.id, "messagedata_timed":"", "messagedata": datamessagehere, 'messagedata_operator': ''}}
     )
     await SupportManage.onair.set()
 
 @dp.message_handler(state=SupportManage.onair, text='🗣 Переключиться')
 async def changeticket_supportbysupport(message: types.Message):     
-    
+    datamessagehere = "\n".join(
+        [
+            "Оператор приостановил диалог <i>("+datetime.now().strftime("%d.%m.%Y / %H:%M")+")</i>"
+        ]
+    ) 
     ticket_collection.find_and_modify(
         query={"operator": message.from_user.id, "isopen":"onair"},
-        update={"$set":{"isopen":"onpause", "messagedata_timed":"----operator paused at "+datetime.now().strftime("%d/%m/%Y %I:%M%p")+"--------------"}}
+        update={"$set":{"isopen":"onpause", "messagedata_timed":datamessagehere}}
     )
     html_text="\n".join(
         [
@@ -1570,11 +1756,12 @@ async def currenttalk(message: types.Message):
     datamessagehere = "\n".join(
         [
             thisicket["messagedata"],
-            html_text,
-            ' ',
-            'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+            '',
+            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            message.text
         ]
     )
+    
     ticket_collection.find_and_modify(
         query={"ticketid":thisicket["ticketid"]},
         update={"$set":{"messagedata":datamessagehere}}
@@ -1595,9 +1782,9 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
         datamessagehere = "\n".join(
             [
                 thisicket["messagedata"],
-                html_text,
-                ' ',
-                'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+                '',
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.text
             ]
         )
         
@@ -1615,9 +1802,9 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
         datamessagehere = "\n".join(
             [
                 thisicket["messagedata_timed"],
-                html_text,
-                ' ',
-                'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+                '',
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.text
             ]
         )
         operatormessage = "\n".join(
@@ -1640,8 +1827,9 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
         datamessagehere = "\n".join(
             [
                 thisicket["messagedata_timed"],
-                html_text,
-                'at '+datetime.now().strftime("%d/%m/%Y %I:%M%p")
+                '',
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.text
             ]
         )
         operatormessage = "\n".join(

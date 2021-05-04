@@ -19,9 +19,9 @@ async def knwoledge_user_show(message: types.Message):
     itemstoshow=knowledge_collection.find({'parent':'main','item_id': {'$ne': 'main'}})
     html_text="\n".join(
         [
-            'Это база знаний КриптоКонсалтинг',
+            'Здесь вы можете найти всю необходимую информацию, чтобы сложилось понимание о криптовалютах и о том, как их приобрести и хранить.', 
             ' ',
-            'Пожалуйста выберите раздел ниже'
+            'Выберите интересующий раздел:'
         ]
     )
     inlinekeys = InlineKeyboardMarkup(row_width=2)
@@ -45,9 +45,9 @@ async def show_knowledge_user_item_func(call: types.CallbackQuery, callback_data
     if thissection['item_id'] == 'main':
         html_text="\n".join(
             [
-                'Это база знаний КриптоКонсалтинг',
+                'Здесь вы можете найти всю необходимую информацию, чтобы сложилось понимание о криптовалютах и о том, как их приобрести и хранить.', 
                 ' ',
-                'Пожалуйста выберите раздел ниже'
+                'Выберите интересующий раздел:'
             ]
         )
         inlinekeys = InlineKeyboardMarkup(row_width=2)
@@ -62,7 +62,6 @@ async def show_knowledge_user_item_func(call: types.CallbackQuery, callback_data
         html_text="\n".join(
             [
                 '<b>'+thissection['title']+'</b>',
-                ' ',
                 ' ',
                 thissection['description']
             ]
@@ -105,7 +104,7 @@ async def show_knowledge_func(call: types.CallbackQuery, callback_data:dict):
             [
                 'Название раздела: '+thissection['title'],
                 ' ',
-                'Описание раздела, которое увидит пользователь: ',
+                'Описание раздела: ',
                 ' ',
                 thissection['description']
             ]
@@ -167,7 +166,7 @@ async def add_knowledge_func(call: types.CallbackQuery, callback_data:dict):
             [
                 'Название раздела: '+thissection['title'],
                 ' ',
-                'Описание раздела, которое увидит пользователь: ',
+                'Описание раздела: ',
                 ' ',
                 thissection['description']
             ]

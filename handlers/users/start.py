@@ -3,7 +3,7 @@ from aiogram.dispatcher.filters.builtin import CommandStart
 import math
 import random
 from datetime import datetime
-from data.config import user_collection, staff_collection, settings_collection, pmessages_collection
+from data.config import user_collection, staff_collection, settings_collection, pmessages_collection, photos_collection
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from loader import dp,bot
 from states import ProjectManage,SupportManage, SetupBTSstates
@@ -99,6 +99,27 @@ async def bot_start(message: types.Message):
                 ]) 
                 await bot.send_message(chat_id= message.from_user.id, text=html_text,parse_mode='HTML', reply_markup=inlinebutt)
                 await ProjectManage.startmeeting.set()
+            elif message.from_user.is_bot==False:
+                html_text="\n".join(
+                    [
+                        '<b>💎 ООО «Крипто Консалтинг»</b>',
+                        '',
+                        '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
+                        '',
+                        '🗣 Консультация и обучение',
+                        '💲 Доверительное управление',
+                        '🎓 Юридическое сопровождение',
+                        '🛡 Холодное хранение',
+                        '💱 Легальный обмен',
+                        '',
+                        '———',
+                        '',
+                        '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
+                        '',
+                    ]
+                )
+                await ProjectManage.menu.set()
+                await message.answer_photo(photo=photoparser('usermainmenu'),caption=html_text, parse_mode='HTML', reply_markup= defaultmenu )
 #################################################User Meet#############################################33                    
 @dp.callback_query_handler(text='start_meeting_user', state=ProjectManage.startmeeting)
 async def start_meeting_user_func(call:types.CallbackQuery):
@@ -146,7 +167,9 @@ async def addglbl_func(message: types.Message):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+            '———',
+            '',
+            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
             '',
         ]
     )
@@ -179,7 +202,9 @@ async def pickcityuser_func(call: types.CallbackQuery, callback_data:dict):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+            '———',
+            '',
+            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
             '',
             parse_message_by_tag_name(citycode)
         ]
@@ -328,7 +353,9 @@ async def menu_hand(message: types.Message, state: FSMContext):
                 '🛡 Холодное хранение',
                 '💱 Легальный обмен',
                 '',
-                '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+                '———',
+                '',
+                '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
                 '',
                 parse_message_by_tag_name(thisuser['citytag'])
             ]
@@ -365,7 +392,11 @@ async def parse_video_hand(message: types.Message, state: FSMContext):
     await bot.send_video(chat_id=message.from_user.id, video=message.video.file_id)
 
 
-
+@dp.message_handler(text='showallphoto', state=SupportManage.menu)
+async def parse_video_hand(message: types.Message, state: FSMContext): 
+    photosss=photos_collection.find({})
+    for x in photosss:
+        await bot.send_photo(chat_id=message.from_user.id, photo=x['photo_id'], caption=x['name']+' '+x['photo_id'])
 
 
 
@@ -422,7 +453,9 @@ async def support_menu_hand(message: types.Message, state: FSMContext):
                 '🛡 Холодное хранение',
                 '💱 Легальный обмен',
                 '',
-                '<i>Нажмите кнопку «О нас / услуги», чтобы узнать подробнее о компании и всех услугах.</i>',
+                '———',
+                '',
+                '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
                 '',
                 parse_message_by_tag_name(thisuser['citytag'])
             ]
