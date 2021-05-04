@@ -35,7 +35,7 @@ import sys,os
 pathname = os.path.dirname(sys.argv[0]) 
 if pathname!='':
     pathname=pathname+'/'
-@dp.message_handler(state=ProjectManage.menu, text='💵 Курс SST/BTC/ETH/')
+@dp.message_handler(state=ProjectManage.menu, text='💵 Курс')
 async def initialize_costs(message: types.Message):
     html_text="\n".join(
         [
