@@ -14,9 +14,9 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel
+from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city, get_about_links
 
-from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
+from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call, about_team_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
 
 from PIL import Image, ImageChops,ImageDraw, ImageFont
@@ -158,6 +158,11 @@ async def aboutususer(message: types.Message):
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='👩🏻‍💻 О нашей команде',
+            callback_data=about_team_call.new(command='showaboutcard', param1=1, param2='none')
+            ),
+        ],
         [
         InlineKeyboardButton(
             text='💎 Консалтинг',
@@ -165,8 +170,12 @@ async def aboutususer(message: types.Message):
             )
         ],
         [InlineKeyboardButton(
-            text='💰 80-101% годовых — фонд SCHUTZ',
+            text='💰 80-101% годовых',
             callback_data='earn_about_us'
+            ),
+            InlineKeyboardButton(
+            text='🦁 SIMBA Storage',
+            callback_data='SIMBA_about_us'
             ),
         ],
         [InlineKeyboardButton(
@@ -218,31 +227,269 @@ async def aboutususer(message: types.Message):
 async def earn_about_us_func(call: CallbackQuery):
     html_text="\n".join(
         [
-            'Уже четыре года мы зарабатываем на криптовалютах. Главным источником заработка является трейдинг — купить по низкой цене, продать по высокой. Но не у каждого это получается и не каждый хочет, потому что это требует усилий, времени и знаний. В таком случае мы предлагаем инвестиционный продукт SCHUTZ от наших партнеров. Выбрав данную опцию, вы сможете получать от 80% годовых чистой прибыли в USDT (цифровой доллар).',
-            'Также наша компания предоставляет консультационные услуги по составлению инвестпортфелей в криптовалюте от 100% годовых, а также большое количиство «сигналов» на покупку и продажу Биткоина.'
+            '✅ <b>283 445 800 ₽</b> под управлением',
+            '✅ <b>57 442 309 ₽</b> инвестиций за апрель 2021',
+            '✅ <b>13 331 472 ₽</b> выплачено тел вкладов в апреле 2021',
+            '',
+            '💵 Уже четыре года мы зарабатываем на криптовалютах.',
+            'Главным источником заработка является трейдинг — купить по низкой цене, продать по высокой. Но не у каждого это получается и не каждый хочет, потому что требуется много усилий, времени и знаний. Чтобы получать прибыль и не вовлекаться самому, нашими партнерами был создан инвестиционный продукт SCHUTZ. Выбрав данную опцию вы можете получать от 80% годовых чистой прибыли в USDT (цифровой доллар) до 101% (удвоить депозит).',
+            '',
+            '💰 Вторым предложением нашей компании является составление инвестпортфеля в криптовалюте с годовой доходностью от 100%. А также большое количество «сигналов» на покупку и продажу Bitcoin.'
         ]
     )
-
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='Узнать подробнее о фонде',
-            url='https://invest80.ru'
-            ),
+        [
+        InlineKeyboardButton(
+            text='⁉️ Ответы на вопросы',
+            callback_data='schutz_faq_about_us'
+            )    
         ],
         [
         InlineKeyboardButton(
-            text='Открыть вклад в SCHUTZ',
-            url='https://schutz.capital/?referral=606a97c8ea9d8b8d2dba75b5'
+            text='💵 Открыть вклад в SCHUTZ',
+            url=aboutobj['schutz_link']
             )    
+        ],
+        [InlineKeyboardButton(
+            text='📃 Узнать о фонде больше',
+            url='https://invest80.ru'
+            ),
         ],
         [InlineKeyboardButton(
             text='↩️ Назад',
             callback_data='userbacktorookie'
             )  
-        ],
-    ])
+        ]])
     await call.message.delete()
-    await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+
+@dp.callback_query_handler(text='schutz_faq_about_us', state=[ProjectManage.menu])
+async def schutz_faq_about_us_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>1) 80% за год? Почему так много?</b>',
+            '',
+            '<i>Для рынка криптовалют 80% — это нормально. Давайте посчитаем, откуда берутся такие проценты?',
+            'В марте 2020 года биткойн стоил $3500, а в этом году ≈ $60 000. Это больше чем в 10 раз!',
+            'Рынок криптовалют очень волатилен. Что это значит? Это значит, что цена активов сильно колеблется.',
+            'На данных изменениях зарабатывает Фонд, покупая дешево, продавая дороже. Сравнивая с фондовым рынком, даже профессиональные трейдеры могут делать 200% в год, но они это делают для себя, предлагая клиентам меньше. Это называется безрисковые стратегии.',
+            '',
+            'Ещё одно доказательство, что Фонд делает такой % прибыли — это статистика отработки по бесплатным ежемесячным рекомендациям, начиная с 2017 года. Все сделки можно проверить в открытом канале Neutrino @neutrinofund.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='▶️',
+            callback_data='schutz_faq_about_us_two'
+            )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+@dp.callback_query_handler(text='schutz_faq_about_us_two', state=[ProjectManage.menu])
+async def schutz_faq_about_us_two_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>2) Какие есть гарантии?</b>',
+            '',
+            '<i>Возможно, в 2021 году в международном праве появятся законы по которым финансовые регуляторы смогут выдавать страховки управляющим фондам, компаниям, занимающимся управлением криптовалютами (именно торговлей!). Сейчас таких не существует, поскольку только-только создаются прецеденты регулирования на основании которых пишутся законы. Регуляторы во всем мире еще не придумали, как регулировать деятельность криптофондов. Как только такая возможность станет реальной, в фонде сразу появятся такие лицензии, предоставляющие клиенту гарантии.  Сейчас гарантия фонда — это 4 года работы и 100% выплат всем инвесторам, что подтверждено блокчейном Ethereum. Это свидетельствует об устойчивости компании, о наличии долгосрочной стратегии. Основатель и руководитель Фонда также имеет проекты, которые уже зарегистрированы в 🇨🇭Швейцарии, 🇱🇮Лихтенштейне, 🇦🇪ОАЭ и 🇳🇿 Новой Зеландии.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='◀️',
+            callback_data='schutz_faq_about_us_two'
+            ), 
+        InlineKeyboardButton(
+            text='▶️',
+            callback_data='schutz_faq_about_us_three'
+            )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+@dp.callback_query_handler(text='schutz_faq_about_us_three', state=[ProjectManage.menu])
+async def schutz_faq_about_us_three_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>3) Как обменять рубли на USDT, законен ли обмен?</b>',
+            '',
+            '<i>В соответствии с Федеральным законом «О цифровых финансовых активах, цифровой валюте и о внесении изменений в отдельные законодательные акты Российской Федерации», на территории РФ криптовалюта признана имуществом, и с доходов уже в скором времени нужно будет платить налог. Закон разрешает обмен криптовалют в РФ у лицензированных источников. Лицензии будут выдаваться летом 2021. Сейчас обмен можно делать на криптобиржах, где это доступно. Существуют специальные площадки для обмена, например, Bestchange.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='◀️',
+            callback_data='schutz_faq_about_us_three'
+            ), 
+        InlineKeyboardButton(
+            text='▶️',
+            callback_data='schutz_faq_about_us_four'
+            )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+@dp.callback_query_handler(text='schutz_faq_about_us_four', state=[ProjectManage.menu])
+async def schutz_faq_about_us_four_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>4) Как Крипто Консалтинг гарантирует мне, что с моими деньгами будет все хорошо?</b>',
+            '',
+            '<i>💎 «Крипто Консалтинг» — консалтинговая компания оказывающая консультационные услуги. Подбираем проекты, авторитетные фонды и компании. У нас своя система критериев оценки проектов. Компании-партнеры с которыми мы работаем, оправдывают доверие. SСHUTZ — криптофонд, работающий 4 года и за это время никогда не было осечек, особенно по сравнению с другими публичными криптовалютными проектами. Все выплаты производятся в срок и в обещанном количестве. Ежеквартальные отчеты позволяют видеть картину целиком. Сумма выплат превышает сумму вкладов в фонд — это означает, что в нём нет пирамидальной составляющей.',
+            '',
+            'Мы не берем на себя обязательства каким-либо образом страховать вклады клиентов, показываем лучший опыт заработка в криптовалютной сфере. У нас нет ни одного клиента которого как-то обманули и он потерял деньги. Только положительный опыт и успешные примеры. Мы открыты, а наша деятельность прозрачна.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='◀️',
+            callback_data='schutz_faq_about_us_four'
+            ), 
+        InlineKeyboardButton(
+            text='▶️',
+            callback_data='schutz_faq_about_us_five'
+            )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+@dp.callback_query_handler(text='schutz_faq_about_us_five', state=[ProjectManage.menu])
+async def schutz_faq_about_us_five_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>5) Если с проектом SСHUTZ что-то случится, куда мне обращаться? </b>',
+            '',
+            '<i>Если что-то случается, мы, как проводник информации, как консультационное агентство расскажем клиенту о произошедших событиях в фонде. Мы держим клиентов информированными. При этом стоит помнить, что ООО «Крипто Консалтинг» рекомендует вам воспользоваться теми или иными сервисами и проектами, а не обязывает или принуждает. Мы рекомендуем лучшие решения на рынке, а решение принимает клиент. Если вы не готовы брать на себя риски, вам не стоит заходить на рынок криптовалют.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='◀️',
+            callback_data='schutz_faq_about_us_five'
+            ), 
+        InlineKeyboardButton(
+            text='▶️',
+            callback_data='schutz_faq_about_us_six'
+            )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+@dp.callback_query_handler(text='schutz_faq_about_us_six', state=[ProjectManage.menu])
+async def schutz_faq_about_us_six_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>6) Где зарегистрирован фонд SCHUTZ? Я подписываю с ними какой-то договор?</b>',
+            '',
+            '<i>Фонд будет зарегистрирован в 2021 году. Из-за того, что ещё не было сформировано международное законодательство позволяющее вести лицензированную деятельность, работа фонда происходит в представленном варианте. Многие большие зарубежные фонды после работы 2-3 лет также начинают регистрацию в определенных юрисдикциях. На данный момент клиент подписывает с фондом SСHUTZ электронное соглашение, в котором указано условие действия депозита с описанным ограничением ответственности и рисками.',
+            '',
+            'С компанией ООО «Крипто Консалтинг» клиент подписывает бумажный договор на оказание КОНСУЛЬТАЦИОНЫХ услуг. Наша задача провести клиента по всем этапам безопасной сделки: от помощи в переводе его криптовалют на кошелек, до консультаций по сохранению всех приватных ключей, паролей, доступов. Консультации по ведению счёта, комиссиям в сети блокчейн, по обращению со счетом, по выводу в выгодный для клиента момент из USDT в рубли.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='◀️',
+            callback_data='schutz_faq_about_us_six'
+            ), 
+        InlineKeyboardButton(
+            text='▶️',
+            callback_data='schutz_faq_about_us_seven'
+            )    
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+@dp.callback_query_handler(text='schutz_faq_about_us_seven', state=[ProjectManage.menu])
+async def schutz_faq_about_us_seven_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '<b>7) Я ищу в Google информацию про фонд SCHUTZ и ничего не могу найти. Почему?</b>',
+            '',
+            '<i>Фонд SCHUTZ до 2021 года ни разу не рекламировался в сети. Фонд не создавал рекламных кампаний, не привлекал блогеров или копирайтеров для разборов, потому что это просто было не нужно. Фонд существует с 2017 года, это можно проверить по открытому каналу @neutrinofund. Так же в канале возможно проследить, когда для инвесторов была открыта возможность инвестировать и получать с инвестиций процент. Ранее фонд назывался NTS 80, по количеству процентов, которые он увеличивает инвесторам за год (расшифровка Neutrino Token Standart). В 2021 году фонд произвел ребрендинг, и теперь он называется – SCHUTZ.</i>'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [
+        InlineKeyboardButton(
+            text='◀️',
+            callback_data='schutz_faq_about_us_six'
+            ),
+        ], 
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='earn_about_us'
+            )  
+        ]])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
+
+
+
+
+
+
 
 
 @dp.callback_query_handler(text='consulting_about_us', state=[ProjectManage.menu])
@@ -262,6 +509,204 @@ async def consulting_about_us_func(call: CallbackQuery):
     ])
     await call.message.delete()
     await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
+
+
+
+@dp.callback_query_handler(text='SIMBA_about_us', state=[ProjectManage.menu])
+async def SIMBA_about_us_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            'Новый и совершенный способ хранения Биткойна — хранилище 🦁SIMBA Storage.',
+            'Хранилище объединяет в себе преимущества горячего и холодного кошелька с серверами в 4-х странах: в 🇨🇭Швейцарии, 🇱🇮Лихтенштейне, 🇦🇪ОАЭ и 🇳🇿 Новой Зеландии.',
+            'Зачем это нужно? По статистике, каждые сутки в мире пользователи теряют около 1500 биткоинов! Хранилище 🦁SIMBA Storage решает эту проблему.',
+            'Как? 📃Читайте далее...'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='📃 Читать далее...',
+            callback_data='SIMBA_about_us_two'
+            )  
+        ],
+        [InlineKeyboardButton(
+            text='🔗 Официальный сайт',
+            url=aboutobj['simba_link_landing']
+            )  
+        ],
+        [InlineKeyboardButton(
+            text='🔑 Зарегистрироваться',
+            url=aboutobj['simba_link_reg']
+            )  
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='userbacktorookie'
+            )  
+        ],
+    ])
+    await call.message.delete()
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
+
+@dp.callback_query_handler(text='SIMBA_about_us_two', state=[ProjectManage.menu])
+async def SIMBA_about_us_two_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            'Основное отличие и особенность хранилища 🦁SIMBA Storage заключается в том, что оно закрывает все недостатки существующих способов хранения: 🔥горячего и ❄️холодного.'
+            '⛔️ Основная проблема связанная с хранением биткойна — уязвимость кошельков и человеческий фактор.',
+            '',
+            'Сами посудите:',
+            '🔥 Хранить на онлайн кошельках blockchain.com, myetherwallet — с высокой вероятностью взломают и уведут деньги.',
+            '❄️ Хранить деньги на холодном кошельке? Если секретная фраза восстановления будет утеряна — с деньгами можно попрощаться (никакая техподдержка вам не восстановит, у блокчейн ее не существует).',
+            '',
+            'Какое решение? 📃Читайте далее...'
+        ]
+    )
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='📃 Читать далее...',
+            callback_data='SIMBA_about_us_three'
+            )  
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='SIMBA_about_us'
+            )  
+        ],
+    ])
+    await call.message.delete()
+    await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
+@dp.callback_query_handler(text='SIMBA_about_us_three', state=[ProjectManage.menu])
+async def SIMBA_about_us_three_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            '➕ Холодное хранение с многоуровневой аутентификацией, при которой хищение вашей криптовалюты третьими лицами невозможно. А если мошенникам каким-то образом удастся похитить, администрация проекта сделает аудит хищения, удалит токены с кошелька мошенника при помощи функции смарт-контракта, а вам начислит обратно украденную криптовалюту.',
+            '',
+            '➕ Не нужно беспокоиться о том, что ваши фразы восстановления и закрытые ключи будут утеряны. Процедура KYC (идентификация владельца), через которую проходят пользователи, позволяет восстановить доступ к вашим Биткоинам.',
+            '',
+            '➕ Возможность передать ваши Биткоины в наследство.',
+            '',
+            '➕ Возможность создания трастового фонда для ваших близких.',
+            '',
+            '➕ Информация о хранилище прозрачна и доступна для всех пользователей. Вы всегда можете посмотреть сколько Биткоинов находится в хранении.',
+            '',
+            '➕ Низкая комиссия при переводе.'
+        ]
+    )
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='📃 Читать далее...',
+            callback_data='SIMBA_about_us_four'
+            )  
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='SIMBA_about_us'
+            )  
+        ],
+    ])
+    await call.message.delete()
+    await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
+    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
+@dp.callback_query_handler(text='SIMBA_about_us_four', state=[ProjectManage.menu])
+async def SIMBA_about_us_four_func(call: CallbackQuery):
+    html_text="\n".join(
+        [
+            'Регистрируйтесь в 🦁SIMBA Storage сейчас и храните ваши биткойны в безопасном хранилище в 4-х странах 🇨🇭🇱🇮🇦🇪🇳🇿'
+        ]
+    )
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_link')
+    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='🔑 Зарегистрироваться',
+            url=aboutobj['simba_link_reg']
+            )  
+        ],
+        [InlineKeyboardButton(
+            text='↩️ Назад',
+            callback_data='SIMBA_about_us'
+            )  
+        ],
+    ])
+    await call.message.delete()
+    await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
+
+
+# # about_team_call.filter(command='showaboutcard', param1=1, param2='none')
+# @dp.callback_query_handler(show_cities_pages.filter(command='showcities'), state=SupportManage.menu)
+# async def show_cities_func(call: types.CallbackQuery, callback_data:dict):
+
+@dp.callback_query_handler(about_team_call.filter(command='showaboutcard'), state=[ProjectManage.menu])
+async def team_about_us_func(call: CallbackQuery,  callback_data:dict):
+    usertag=get_user_city(call.from_user.id)
+    aboutobj=get_about_links(usertag+'_about_team_info')
+    team_cards=aboutobj['team_cards']
+    
+
+    page = callback_data.get("param1")
+    page = int(page)
+
+    thiscard=team_cards[page-1]
+    prevpage = page - 1
+    nextpage = page + 1
+
+    inlinekeys = InlineKeyboardMarkup(row_width=2)
+    # print(thiscard['photo'])
+    # print(thiscard['text'])
+
+    # print()
+    
+    if prevpage < 1:
+        prevtoadd=InlineKeyboardButton(
+            text='◀️',
+            callback_data=about_team_call.new(command='showaboutcard', param1=1, param2='none')
+        )
+    else:
+        prevtoadd=InlineKeyboardButton(
+            text='◀️',
+            callback_data=about_team_call.new(command='showaboutcard', param1=prevpage, param2='none')
+        )
+
+    if  len(team_cards)==page:
+        nexttoadd=InlineKeyboardButton(
+            text='▶️',
+            callback_data=about_team_call.new(command='showaboutcard', param1=page, param2='none')
+        )      
+    else:
+        nexttoadd=InlineKeyboardButton(
+            text='▶️',
+            callback_data=about_team_call.new(command='showaboutcard', param1=nextpage, param2='none')
+        )
+
+    inlinekeys.add(prevtoadd,nexttoadd)
+    
+    # inlinekeys
+    backbutton=InlineKeyboardButton(
+        text='↩️ Назад',
+        callback_data='userbacktorookie'
+        ) 
+    inlinekeys.add(backbutton)
+    html_text="\n".join(
+        [
+            thiscard['text']
+        ]
+    )
+    await call.message.delete()
+    # await call.message.answer(text='k')
+    await bot.send_photo(chat_id=call.from_user.id, photo=thiscard['photo'], reply_markup=inlinekeys, caption=html_text)
+
+
+
+
+
+
 
 @dp.callback_query_handler(text='keep_about_us', state=[ProjectManage.menu])
 async def keep_about_us_func(call: CallbackQuery):
@@ -408,6 +853,11 @@ async def userbacktorookie_about_us_func(call: CallbackQuery):
     )
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='👩🏻‍💻 О нашей команде',
+            callback_data=about_team_call.new(command='showaboutcard', param1=1, param2='none')
+            ),
+        ],
         [
         InlineKeyboardButton(
             text='💎 Консалтинг',
@@ -415,8 +865,12 @@ async def userbacktorookie_about_us_func(call: CallbackQuery):
             )
         ],
         [InlineKeyboardButton(
-            text='💰 80-101% годовых — фонд SCHUTZ',
+            text='💰 80-101% годовых',
             callback_data='earn_about_us'
+            ),
+            InlineKeyboardButton(
+            text='🦁 SIMBA Storage',
+            callback_data='SIMBA_about_us'
             ),
         ],
         [InlineKeyboardButton(
@@ -459,55 +913,6 @@ async def userbacktorookie_about_us_func(call: CallbackQuery):
 
     await call.message.delete()
     await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
-
-
-
-
-@dp.callback_query_handler(state=ProjectManage.menu, text='schutz_about_us')
-async def schutz_about_us_func(call: CallbackQuery):
-    html_text="\n".join(
-        [
-            'Уже четыре года мы зарабатываем на криптовалютах. Главных источником заработка является трейдинг — купить по низкой цене, продать по высокой. Но не у каждого это получается и не каждый хочет, потому что это требует усилий, времени и знаний. В таком случае мы предлагаем продукт SCHUTZ от наших партнеров. Если тебе интересно, нажимай "подробнее".'
-        ]
-    )
-
-    inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='Видеоразбор с Лерой',
-            url='https://www.youtube.com/watch?v=JCuGKrDcJkE'
-            ),
-        InlineKeyboardButton(
-            text='Узнать о фонде',
-            url='invest80.ru'
-            )    
-        ],
-    ])
-    inlinemenu.add(InlineKeyboardButton(
-            text='Открыть вклад',
-            url='https://my.schutz.capital/signup?referral=606a97c8ea9d8b8d2dba75b5'
-            ))
-    await bot.send_video_note(chat_id=call.from_user.id,video_note=parse_video_by_tag_name('kk_logo_circle') )
-    await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('whatiscrypto'), reply_markup=inlinemenu)
-    # await bot.send_video_note(chat_id=message.from_user.id,video_note='DQACAgIAAxkBAAIS3mB05-7vIAa7ctMvCEiBEkbpmeRLAALbBwAC_bJRSMg0iIUYG_dTHgQ', reply_markup=inlinemenu )
-    
-
-# @dp.callback_query_handler(text='audit_about_us', state=[ProjectManage.menu])
-# async def audit_about_us_func(call: CallbackQuery):
-#     html_text="\n".join(
-#         [
-#             'Если вы решили принять участие в криптопроекте сторонней компании, но боитесь им довериться — вы можете заказать у нас аудит, в котором мы детально опишем весь код контракта и укажем на допущенные ошибки, бэкдоры и возможные проблемы.' 
-#         ]
-#     )
-
-#     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-#         [InlineKeyboardButton(
-#             text='Назад',
-#             callback_data='userbacktorookie'
-#             )  
-#         ],
-#     ])
-#     await call.message.delete()
-#     await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 
 
@@ -608,17 +1013,26 @@ async def user_come_to_menu(call:types.CallbackQuery):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '———',
-            '',
-            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
-            '',
-            parse_message_by_tag_name(thisuser['citytag'])
+            'Подписывайтесь на наш Telegram канал:',
+            '👉 @cryptocons 👈',
+            # parse_message_by_tag_name(thisuser['citytag'])
         ]
     )
     await call.message.delete()
-    await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
+    # await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
     await ProjectManage.menu.set()
+    caption_attach="\n".join([
+            '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
+            '<b>«🗣 Получить консультацию»‎.</b>',
+            '',
+            parse_message_by_tag_name(thisuser['citytag'])
+        ])
+    photostosend=types.MediaGroup()
+    photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
+    
 
+    await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
+    await bot.send_media_group(chat_id=call.from_user.id,media=photostosend)
 
 
 @dp.callback_query_handler(text='ivegotit', state=[SupportManage.menu, SupportManage.onair])
@@ -708,11 +1122,9 @@ async def end_support(message: types.Message):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '———',
-            '',
-            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
-            '',
-            parse_message_by_tag_name(thisuser['citytag'])
+            'Подписывайтесь на наш Telegram канал:',
+            '👉 @cryptocons 👈',
+            # parse_message_by_tag_name(thisuser['citytag'])
         ]
     )
     await message.answer_photo(photo=photoparser('operatorticketfinished') ,parse_mode='HTML')
@@ -920,16 +1332,27 @@ async def clientgogotomenucallback(call: CallbackQuery):
             '🛡 Холодное хранение',
             '💱 Легальный обмен',
             '',
-            '———',
-            '',
-            '<i>Наши специалисты проконсультируют вас по любому вопросу. Нажмите кнопку «🗣 Получить консультацию»‎.</i>',
-            '',
-            parse_message_by_tag_name(thisuser['citytag'])
+            'Подписывайтесь на наш Telegram канал:',
+            '👉 @cryptocons 👈',
+            # parse_message_by_tag_name(thisuser['citytag'])
         ]
     )
     await call.message.delete()
-    await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
+    # await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
     await ProjectManage.menu.set()
+
+    caption_attach="\n".join([
+            '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
+            '<b>«🗣 Получить консультацию»‎.</b>',
+            '',
+            parse_message_by_tag_name(thisuser['citytag'])
+        ])
+    photostosend=types.MediaGroup()
+    photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
+    
+
+    await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
+    await bot.send_media_group(chat_id=call.from_user.id,media=photostosend)
 
 @dp.callback_query_handler(text='tonewtickets', state=SupportManage.menu)
 async def tonewticketsfunc(call:types.CallbackQuery):

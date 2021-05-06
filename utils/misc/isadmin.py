@@ -1,4 +1,4 @@
-from data.config import staff_collection, ticket_collection, settings_collection, pmessages_collection, videos_collection, photos_collection, videocircles_collection, channelid
+from data.config import staff_collection, ticket_collection, settings_collection, pmessages_collection, videos_collection, photos_collection, videocircles_collection, channelid, user_collection
 from loader import dp, bot
 
 def issupport(x):
@@ -34,8 +34,16 @@ def parse_city(x):
         if x == y['code']:
             gotcha = y['city']
             break
-    
     return gotcha
+
+def get_user_city(x):
+    asd=user_collection.find_one({'user_id':x})
+    cities_obj=asd["citytag"]
+    return cities_obj
+
+def get_about_links(x):
+    asd=pmessages_collection.find_one({"tag_name":x})
+    return asd
 
 def parse_message_by_tag_name(x):
     asd = pmessages_collection.find_one({"tag_name":x})
