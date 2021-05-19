@@ -8,9 +8,6 @@ from loader import dp, bot
 from utils.misc import isowner
 
 class OndevMiddleware(BaseMiddleware):
-    
-
-
     async def on_pre_process_message(self, message: types.Message, data: dict):
         getstat = settings_collection.find_one({"settings":"mainsettings"})
         if getstat == None:
@@ -33,4 +30,4 @@ class OndevMiddleware(BaseMiddleware):
                     await cq.answer(text='Бот временно недоступен')
                     await bot.send_message(chat_id=cq.from_user.id, text='К сожалению, бот поддержки КриптоКонсалтинг недоступен на данный момент из-за технических работ. Пожалуйста, повторите попытку чуть позже. Мы продолжим ровно на том же месте :)')
                     raise CancelHandler()
-            return True
+            return True           

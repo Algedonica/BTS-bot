@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from loader import dp,bot
 from states import ProjectManage,SupportManage, SetupBTSstates
 from aiogram.dispatcher import FSMContext
-from utils.misc import issupport, parse_city, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name
+from utils.misc import issupport, parse_city, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from, get_about_links, get_user_city
 from aiogram.types import InputMediaPhoto
 from keyboards.default import defaultmenu,operatorshowuser
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages
@@ -116,15 +116,36 @@ async def bot_start(message: types.Message):
                         # parse_message_by_tag_name(thisuser['citytag'])
                     ]
                 )
+                thisuser=user_collection.find_one({'user_id':message.from_user.id})
                 await ProjectManage.menu.set()
-                # await message.answer_photo(photo=photoparser('usermainmenu'),caption=html_text, parse_mode='HTML', reply_markup= defaultmenu )
-                caption_attach="\n".join([
-                    # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-                    # '<b>«🗣 Получить консультацию»‎.</b>',
-                    # '',
-                    parse_message_by_tag_name(thisuser['citytag'])
-                ])
                 photostosend=types.MediaGroup()
+
+                if 'agent_' in get_user_came_from(message.from_user.id):
+                    if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
+                        get_about=get_user_came_from(message.from_user.id)
+                        aboutobj=get_about_links(get_about)
+                        caption_attach="\n".join(
+                            [
+                                aboutobj['name'],
+                                '',
+                                parse_message_by_tag_name(thisuser['citytag']),
+                                
+                            ]
+                        )
+                        photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+                    else:
+                        usertag=get_user_city(message.from_user.id)
+                        aboutobj=get_about_links(usertag+'_link')
+                        caption_attach="\n".join([
+                            parse_message_by_tag_name(thisuser['citytag'])
+                        ])
+                        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
+                else:
+                    usertag=get_user_city(message.from_user.id)
+                    aboutobj=get_about_links(usertag+'_link')
+                    caption_attach="\n".join([
+                        parse_message_by_tag_name(thisuser['citytag'])
+                    ])
                 photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
                 
 
@@ -181,14 +202,34 @@ async def addglbl_func(message: types.Message):
         ]
     )
     await ProjectManage.menu.set()
-    # await message.answer_photo(photo=photoparser('usermainmenu'),caption=html_text, parse_mode='HTML', reply_markup= defaultmenu ) 
-    caption_attach="\n".join([
-            # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-            # '<b>«🗣 Получить консультацию»‎.</b>',
-            # '',
+    photostosend=types.MediaGroup()
+
+    if 'agent_' in get_user_came_from(message.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
+            get_about=get_user_came_from(message.from_user.id)
+            aboutobj=get_about_links(get_about)
+            caption_attach="\n".join(
+                [
+                    aboutobj['name'],
+                    '',
+                    parse_message_by_tag_name(citycode),
+                    
+                ]
+            )
+            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+        else:
+            usertag=get_user_city(message.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')
+            caption_attach="\n".join([
+                parse_message_by_tag_name(citycode)
+            ])
+            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach)      
+    else:
+        usertag=get_user_city(message.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
+        caption_attach="\n".join([
             parse_message_by_tag_name(citycode)
         ])
-    photostosend=types.MediaGroup()
     photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach) 
     
 
@@ -229,14 +270,34 @@ async def pickcityuser_func(call: types.CallbackQuery, callback_data:dict):
     # await state.reset_state()
     await ProjectManage.menu.set()
     await call.message.delete()
-    # await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-    caption_attach="\n".join([
-            # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-            # '<b>«🗣 Получить консультацию»‎.</b>',
-            # '',
+    photostosend=types.MediaGroup()
+
+    if 'agent_' in get_user_came_from(call.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
+            get_about=get_user_came_from(call.from_user.id)
+            aboutobj=get_about_links(get_about)
+            caption_attach="\n".join(
+                [
+                    aboutobj['name'],
+                    '',
+                    parse_message_by_tag_name(citycode),
+                    
+                ]
+            )
+            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+        else:
+            usertag=get_user_city(call.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')
+            caption_attach="\n".join([
+                parse_message_by_tag_name(citycode)
+            ])
+            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach)      
+    else:
+        usertag=get_user_city(call.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
+        caption_attach="\n".join([
             parse_message_by_tag_name(citycode)
         ])
-    photostosend=types.MediaGroup()
     photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach) 
     
 
@@ -424,16 +485,41 @@ async def menu_hand(message: types.Message, state: FSMContext):
         )
         await state.reset_state()
         await ProjectManage.menu.set() 
-        # await message.answer(text=html_text,parse_mode='HTML',reply_markup=defaultmenu)
-        
-        caption_attach="\n".join([
-            # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-            # '<b>«🗣 Получить консультацию»‎.</b>',
-            # '',
-            parse_message_by_tag_name(thisuser['citytag'])
-        ])
         photostosend=types.MediaGroup()
-        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
+
+        if 'agent_' in get_user_came_from(message.from_user.id):
+            if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
+                get_about=get_user_came_from(message.from_user.id)
+                aboutobj=get_about_links(get_about)
+                caption_attach="\n".join(
+                    [
+                        aboutobj['name'],
+                        '',
+                        parse_message_by_tag_name(thisuser['citytag']),
+                        
+                    ]
+                )
+                photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+            else:
+                usertag=get_user_city(message.from_user.id)
+                aboutobj=get_about_links(usertag+'_link')
+                caption_attach="\n".join([
+                    parse_message_by_tag_name(thisuser['citytag'])
+                ])
+                photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
+        else:
+            usertag=get_user_city(message.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')
+            caption_attach="\n".join([
+                parse_message_by_tag_name(thisuser['citytag'])
+            ])
+            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
+
+        
+         
+
+
+        
         
 
         await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
@@ -538,17 +624,35 @@ async def support_menu_hand(message: types.Message, state: FSMContext):
         )
         await state.reset_state()
         await ProjectManage.menu.set() 
-        # await message.answer(text=html_text,parse_mode='HTML',reply_markup=defaultmenu) 
-        # await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu) 
-
-        caption_attach="\n".join([
-            # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-            # '<b>«🗣 Получить консультацию»‎.</b>',
-            # '',
-            parse_message_by_tag_name(thisuser['citytag'])
-        ])
         photostosend=types.MediaGroup()
-        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
+
+        if 'agent_' in get_user_came_from(message.from_user.id):
+            if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
+                get_about=get_user_came_from(message.from_user.id)
+                aboutobj=get_about_links(get_about)
+                caption_attach="\n".join(
+                    [
+                        aboutobj['name'],
+                        '',
+                        parse_message_by_tag_name(thisuser['citytag']),
+                        
+                    ]
+                )
+                photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+            else:
+                usertag=get_user_city(message.from_user.id)
+                aboutobj=get_about_links(usertag+'_link')
+                caption_attach="\n".join([
+                    parse_message_by_tag_name(thisuser['citytag'])
+                ])
+                photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
+        else:
+            usertag=get_user_city(message.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')
+            caption_attach="\n".join([
+                parse_message_by_tag_name(thisuser['citytag'])
+            ])
+            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
         
 
         await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)

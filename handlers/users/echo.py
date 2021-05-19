@@ -14,10 +14,12 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city, get_about_links
-
+from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city, get_about_links, get_user_came_from, check_error_ticket
+from aiogram.dispatcher.handler import CancelHandler
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call, about_team_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
+
+from aiogram.utils.exceptions import BotBlocked
 
 from PIL import Image, ImageChops,ImageDraw, ImageFont
 
@@ -30,6 +32,14 @@ async def clearnotified():
 
             
 scheduler.add_job(clearnotified, 'interval', seconds=180)
+
+
+# @dp.errors_handler(exception=BotBlocked)
+# async def blocked_handler(update: types.Update, exception: BotBlocked):
+#     print(f"Меня заблокировал пользователь!\nСообщение: {update}\nОшибка: {exception}")
+#     j=update.message.chat.id
+#     print(update.from_user.id)
+#     return True
 
 import sys,os
 pathname = os.path.dirname(sys.argv[0]) 
@@ -237,8 +247,19 @@ async def earn_about_us_func(call: CallbackQuery):
             '💰 Вторым предложением нашей компании является составление инвестпортфеля в криптовалюте с годовой доходностью от 100%. А также большое количество «сигналов» на покупку и продажу Bitcoin.'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
+    if 'agent_' in get_user_came_from(call.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
+            get_about=get_user_came_from(call.from_user.id)
+            aboutobj=get_about_links(get_about)
+        else:
+            usertag=get_user_city(call.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')        
+    else:
+        usertag=get_user_city(call.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
+        
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -523,8 +544,17 @@ async def SIMBA_about_us_func(call: CallbackQuery):
             'Как? 📃Читайте далее...'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+    if 'agent_' in get_user_came_from(call.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
+            get_about=get_user_came_from(call.from_user.id)
+            aboutobj=get_about_links(get_about)
+        else:
+            usertag=get_user_city(call.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')        
+    else:
+        usertag=get_user_city(call.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
+        
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
             text='📃 Читать далее...',
@@ -621,8 +651,16 @@ async def SIMBA_about_us_four_func(call: CallbackQuery):
             'Регистрируйтесь в 🦁SIMBA Storage сейчас и храните ваши биткойны в безопасном хранилище в 4-х странах 🇨🇭🇱🇮🇦🇪🇳🇿'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+    if 'agent_' in get_user_came_from(call.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
+            get_about=get_user_came_from(call.from_user.id)
+            aboutobj=get_about_links(get_about)
+        else:
+            usertag=get_user_city(call.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')        
+    else:
+        usertag=get_user_city(call.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
             text='🔑 Зарегистрироваться',
@@ -653,15 +691,42 @@ async def team_about_us_func(call: CallbackQuery,  callback_data:dict):
     page = callback_data.get("param1")
     page = int(page)
 
-    thiscard=team_cards[page-1]
-    prevpage = page - 1
-    nextpage = page + 1
+    if page==1:
+        if 'agent_' in get_user_came_from(call.from_user.id):
+            get_about=get_user_came_from(call.from_user.id)
+            thiscard=get_about_links(get_about)
+            prevpage = page - 1
+            nextpage = 9999
+
+
+            thiscardtext=thiscard['bio']
+            thiscardphoto=thiscard['photo']
+        else:
+            prevpage = page - 1
+            nextpage = page + 1
+
+            thiscard=team_cards[page-1]
+            thiscardtext=thiscard['text']
+            thiscardphoto=thiscard['photo']
+    elif page==9999:
+        prevpage = 1
+        nextpage = 2
+
+        thiscard=team_cards[0]
+        thiscardtext=thiscard['text']
+        thiscardphoto=thiscard['photo']
+    else:
+        prevpage = page - 1
+        if prevpage == 1:
+            prevpage = 9999
+        nextpage = page + 1
+
+        thiscard=team_cards[page-1]
+        thiscardtext=thiscard['text']
+        thiscardphoto=thiscard['photo']
 
     inlinekeys = InlineKeyboardMarkup(row_width=2)
-    # print(thiscard['photo'])
-    # print(thiscard['text'])
 
-    # print()
     
     if prevpage < 1:
         prevtoadd=InlineKeyboardButton(
@@ -695,12 +760,12 @@ async def team_about_us_func(call: CallbackQuery,  callback_data:dict):
     inlinekeys.add(backbutton)
     html_text="\n".join(
         [
-            thiscard['text']
+            thiscardtext
         ]
     )
     await call.message.delete()
     # await call.message.answer(text='k')
-    await bot.send_photo(chat_id=call.from_user.id, photo=thiscard['photo'], reply_markup=inlinekeys, caption=html_text)
+    await bot.send_photo(chat_id=call.from_user.id, photo=thiscardphoto, reply_markup=inlinekeys, caption=html_text)
 
 
 
@@ -1021,14 +1086,35 @@ async def user_come_to_menu(call:types.CallbackQuery):
     await call.message.delete()
     # await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
     await ProjectManage.menu.set()
-    caption_attach="\n".join([
-            # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-            # '<b>«🗣 Получить консультацию»‎.</b>',
-            # '',
+    photostosend=types.MediaGroup()
+
+    if 'agent_' in get_user_came_from(call.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
+            get_about=get_user_came_from(call.from_user.id)
+            aboutobj=get_about_links(get_about)
+            caption_attach="\n".join(
+                [
+                    aboutobj['name'],
+                    '',
+                    parse_message_by_tag_name(thisuser['citytag']),
+                    
+                ]
+            )
+            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+        else:
+            usertag=get_user_city(call.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')
+            caption_attach="\n".join([
+                parse_message_by_tag_name(thisuser['citytag'])
+            ])
+            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
+    else:
+        usertag=get_user_city(call.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
+        caption_attach="\n".join([
             parse_message_by_tag_name(thisuser['citytag'])
         ])
-    photostosend=types.MediaGroup()
-    photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
+        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
     
 
     await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
@@ -1194,11 +1280,92 @@ async def end_supportbysupport(call: CallbackQuery):
             text='🗄 Отчеты',
             callback_data='to_csv_tables'
         ))      
-    # await bot.send_message(chat_id=call.from_user.id,text='Диалог завершен',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
+   
     await bot.send_photo(chat_id=call.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     await call.message.delete()
     await SupportManage.menu.set()   
-  
+
+
+@dp.callback_query_handler(state=SupportManage.onair, text='operator_end_inline_ticket_error')
+async def end_supportbysupport_error(call: CallbackQuery):
+    thisicket=ticket_collection.find_one({"operator": call.from_user.id,"isopen": "onair"}) 
+    if thisicket!=None:
+        
+
+        counttickets=ticket_collection.find().count()+1
+
+        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+        operatorcallmeas=operatornickname['callmeas']
+        operatornickname=operatornickname['username']
+
+        clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
+        clientcallmeas=clientnickname['callmeas']
+        clientnickname=clientnickname['username']
+
+        if operatornickname=='none':
+            operatornickname='Без ника'
+        else:
+            operatornickname="@"+operatornickname
+
+        if clientnickname=='none':
+            clientnickname='Без ника'
+        else:
+            clientnickname="@"+clientnickname
+        datamessagehere = "\n".join(
+            [
+                '<b>Обращение № '+str(counttickets)+'</b>',
+                thisicket['title'],
+                '',
+                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
+                '',
+                '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                thisicket['ticketid'],
+                '',
+                thisicket["messagedata"],
+                '',
+                '=========================',
+                '',
+                "Диалог закрыт с ошибкой (клиент забанил бота) ",
+                "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+
+            ]
+        ) 
+        ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere}})
+        await bot.send_message(chat_id=channelid, text=datamessagehere)
+
+    html_text="\n".join(
+        [
+            '👇 Следите за новыми запросами! 👇'
+        ]
+    )
+    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='📄 Входящие запросы',
+            callback_data='to_tickets'
+        )],
+        [InlineKeyboardButton(
+            text='⚙️ Настройки (в разработке)',
+            callback_data='to_settings'
+        )]
+    ])
+
+    if isadmin(call.from_user.id)== True:
+        supportmenubase.add(InlineKeyboardButton(
+            text='💎 Админпанель',
+            callback_data='to_admin_menu'
+        ))
+    if support_role_check(call.from_user.id)== "PLUS":
+        supportmenubase.add(InlineKeyboardButton(
+            text='🗄 Отчеты',
+            callback_data='to_csv_tables'
+        ))      
+   
+    await bot.send_photo(chat_id=call.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
+    await call.message.delete()
+    await SupportManage.menu.set()  
+
+
 @dp.message_handler(state=SupportManage.onair, text='❌ Завершить')
 async def end_supportbysupport(message: types.Message):
     thisicket=ticket_collection.find_one({"operator": message.from_user.id,"isopen": "onair"}) 
@@ -1341,14 +1508,35 @@ async def clientgogotomenucallback(call: CallbackQuery):
     # await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
     await ProjectManage.menu.set()
 
-    caption_attach="\n".join([
-            # '<i>🧑‍💻 Cпециалисты Крипто Консалтинг ответят на ваши любые вопросы связанные с криптовалютой. Для этого нажмите</i>',
-            # '<b>«🗣 Получить консультацию»‎.</b>',
-            # '',
+    photostosend=types.MediaGroup()
+
+    if 'agent_' in get_user_came_from(call.from_user.id):
+        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
+            get_about=get_user_came_from(call.from_user.id)
+            aboutobj=get_about_links(get_about)
+            caption_attach="\n".join(
+                [
+                    aboutobj['name'],
+                    '',
+                    parse_message_by_tag_name(thisuser['citytag']),
+                    
+                ]
+            )
+            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
+        else:
+            usertag=get_user_city(call.from_user.id)
+            aboutobj=get_about_links(usertag+'_link')
+            caption_attach="\n".join([
+                parse_message_by_tag_name(thisuser['citytag'])
+            ])
+            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
+    else:
+        usertag=get_user_city(call.from_user.id)
+        aboutobj=get_about_links(usertag+'_link')
+        caption_attach="\n".join([
             parse_message_by_tag_name(thisuser['citytag'])
         ])
-    photostosend=types.MediaGroup()
-    photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
+        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
     
 
     await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
@@ -1978,7 +2166,7 @@ async def operator_write_new_name_support(message: types.Message, state: FSMCont
     # await message.answer(text="Новое имя '"+message.text+"' успешно сохранено", parse_mode='HTML', reply_markup=inlinekeys)
     await message.answer_photo(photo=photoparser("operatornameupdated"), caption=" ", reply_markup=inlinekeys)
   
-
+# ----------------здесь инлайн функции-----------------------
 @dp.inline_handler(text="add_operator", state=SupportManage.menu)
 async def initialize_adding_operator_tosys(query: types.InlineQuery):
     if isadmin(query.from_user.id)==False:
@@ -2007,7 +2195,32 @@ async def initialize_adding_operator_tosys(query: types.InlineQuery):
         cache_time=0
     )  
 
+@dp.inline_handler(text="invite", state=ProjectManage)
+async def generate_agent_button(query: types.InlineQuery):
+    this_agent=pmessages_collection.find_one({'tag_name':'agent_'+str(query.from_user.id)})
+    if this_agent!=None:
 
+        supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='Перейти в бота',
+                url='https://t.me/cryptoconsbot?start=agent_'+str(query.from_user.id)
+            )]
+        ])
+        await query.answer(
+            results=[
+                types.InlineQueryResultArticle(
+                    id="1",
+                    title='Пригласить в бота',
+                    input_message_content=types.InputMessageContent(message_text="<b>💎 ООО «Крипто Консалтинг»</b> — \nпроводник в мир криптовалют", parse_mode='HTML'),
+                    reply_markup=supportmenubase,
+                    
+                )
+            ],
+            cache_time=0
+        )
+
+
+# ----------------здесь инлайн функции конец-----------------------
 @dp.callback_query_handler(add_operator_callback.filter(command='addoperatorfactory'), state=[ProjectManage.menu, None])
 async def providing_adding_operator_tosys(call:types.CallbackQuery, callback_data:dict):
     
@@ -2080,7 +2293,7 @@ async def showcard(call:types.CallbackQuery, callback_data:dict):
 
 @dp.callback_query_handler(ticket_callback.filter(command='jumptoclient'), state=SupportManage.menu)
 async def jumptothis(call:types.CallbackQuery, callback_data:dict):
-    await call.answer(cache_time=10)
+    # await call.answer(cache_time=10)
     thisicket=ticket_collection.find_one({"ticketid":callback_data.get("ticketid")})
     thisoperator = staff_collection.find_one({"user_id":call.from_user.id})
     thisuser = user_collection.find_one({"user_id":thisicket['userid']})
@@ -2092,7 +2305,7 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
             '<b>Обращение: </b>'+thisicket['title'],
             ' ',
             'Сообщения в ваше отсутствие: ',
-            thisicket['messagedata_operator']
+            # thisicket['messagedata_operator']
         ]
     )
     datamessagehere = "\n".join(
@@ -2109,17 +2322,65 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
     if thisicket["isopen"]=="created":
         # print(thisoperator['callmeas'])
         if thisoperator['photo_avatar']!='none':
-            await bot.send_photo(chat_id=thisicket['userid'],caption='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML', photo=thisoperator['photo_avatar'])
+            try:
+                print('yos')
+                await bot.send_photo(chat_id=thisicket['userid'],caption='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML', photo=thisoperator['photo_avatar'])
+            except:
+                error_ticket= await check_error_ticket(thisicket['ticketid'])
+                print('noo')
+                await call.answer(text=error_ticket, cache_time=0, show_alert=True)
+                await call.message.delete()
+                opentickets = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+                    [
+                    InlineKeyboardButton(text="⬅ Вернуться к обращениям",callback_data='to_tickets')]
+                ])
+                
+                #проверка на билет
+                await bot.send_photo(chat_id=call.from_user.id,parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=opentickets)
+                raise CancelHandler()
         else:    
-            await bot.send_message(chat_id=thisicket['userid'],text='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML')
+            try:
+                print('yos')
+                await bot.send_message(chat_id=thisicket['userid'],text='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML')
+            except:
+                error_ticket= await check_error_ticket(thisicket['ticketid'])
+                print('noo')
+                await call.answer(text=error_ticket, cache_time=0, show_alert=True)
+                await call.message.delete()
+                opentickets = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+                    [
+                    InlineKeyboardButton(text="⬅ Вернуться к обращениям",callback_data='to_tickets')]
+                ])
+                
+                #проверка на билет
+                await bot.send_photo(chat_id=call.from_user.id,parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=opentickets)
+                #проверка на билет
+                raise CancelHandler()
+    elif thisicket["isopen"]=="onair":
+
+        await call.answer(text='Другой оператор уже начал диалог', cache_time=0, show_alert=True)
+        await call.message.delete()
+        opentickets = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [
+            InlineKeyboardButton(text="⬅ Вернуться к обращениям",callback_data='to_tickets')]
+        ])
         
+        #проверка на билет
+        await bot.send_photo(chat_id=call.from_user.id,parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=opentickets)
+        raise CancelHandler()
+    
+    
     await call.message.delete()
+    
     await bot.send_photo(chat_id=call.from_user.id,caption=html_text,parse_mode='HTML', reply_markup=operatorcontrol,photo=photoparser('changed'))
+    if len(thisicket['messagedata_operator'])>0:
+        await bot.send_message(chat_id=call.from_user.id, text=thisicket['messagedata_operator'])
     ticket_collection.find_and_modify(
         query={"ticketid":callback_data.get("ticketid"), "$or":[{'isopen':'created'},{'isopen':'onpause'}]},
         update={"$set":{"isopen":"onair","operator":call.from_user.id, "messagedata_timed":"", "messagedata": datamessagehere, 'messagedata_operator': ''}}
     )
     await SupportManage.onair.set()
+    await call.answer(cache_time=0)
 
 @dp.message_handler(state=SupportManage.onair, text='🗣 Переключиться')
 async def changeticket_supportbysupport(message: types.Message):     
@@ -2175,7 +2436,38 @@ async def currenttalk(message: types.Message):
         ]
     ) 
     thisicket=ticket_collection.find_one({"operator":message.from_user.id, "isopen":"onair"})
-    await bot.send_message(chat_id=thisicket['userid'],text=html_text,parse_mode='HTML')
+    try:
+        await bot.send_message(chat_id=thisicket['userid'],text=html_text,parse_mode='HTML')
+    except:
+        datamessagehere="\n".join(
+            [
+                thisicket["messagedata"],
+                '',
+                '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={"$set":{"messagedata":datamessagehere}}
+        )
+        html_text2="\n".join(
+            [
+                '<b>🤖 Бот КриптоКонсалтинг:</b>',
+                '',
+                'Клиент завершил диалог, нажмите на ❌ Завершить'
+            ]
+        )
+        endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='❌ Завершить',
+                callback_data='operator_end_inline_ticket_error'
+            )]
+        ]) 
+        await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+
+        #проверка на билет
+        raise CancelHandler()       
     datamessagehere = "\n".join(
         [
             thisicket["messagedata"],

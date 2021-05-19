@@ -27,10 +27,15 @@ async def resetbot_byuser(message: types.Message):
     thisicket=ticket_collection.find_one({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]})
     if thisicket!=None:
         counttickets=ticket_collection.find().count()+1
-
-        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
-        operatorcallmeas=operatornickname['callmeas']
-        operatornickname=operatornickname['username']
+      
+        if thisicket['operator']=='none':
+            
+            operatorcallmeas='none'
+            operatornickname='none'
+        else:
+            operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+            operatorcallmeas=operatornickname['callmeas']
+            operatornickname=operatornickname['username']
 
         clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
         clientcallmeas=clientnickname['callmeas']
