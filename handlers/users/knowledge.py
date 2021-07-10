@@ -6,7 +6,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from loader import dp,bot
 from states import ProjectManage,SupportManage, SetupBTSstates
 from aiogram.dispatcher import FSMContext
-from utils.misc import issupport, parse_city, isadmin, support_role_check, xstr, photoparser
+from utils.misc import issupport, isadmin, support_role_check, xstr, photoparser
 from aiogram.types import InputMediaPhoto
 from keyboards.default import defaultmenu,operatorshowuser
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call

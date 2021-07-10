@@ -1,14 +1,15 @@
 from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
 import math
+import secrets
 import random
 from datetime import datetime
-from data.config import user_collection, staff_collection, settings_collection, pmessages_collection, photos_collection
+from data.config import partner_collection,links_collection,user_collection, staff_collection, settings_collection, pmessages_collection, photos_collection
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from loader import dp,bot
 from states import ProjectManage,SupportManage, SetupBTSstates
 from aiogram.dispatcher import FSMContext
-from utils.misc import issupport, parse_city, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from, get_about_links, get_user_city
+from utils.misc import get_partner_obj, system_text_parser,issupport, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from,   get_user_city, linkparser, linkparser_default
 from aiogram.types import InputMediaPhoto
 from keyboards.default import defaultmenu,operatorshowuser
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages
@@ -60,7 +61,7 @@ async def bot_start(message: types.Message):
                     callback_data='to_csv_tables'
                 ))
             await message.answer_photo(photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase )     
-            # await message.answer(text=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
+           
             await SupportManage.menu.set()  
         else:
             if user_collection.count_documents({"user_id": message.from_user.id}) == 0 and message.from_user.is_bot==False:
@@ -71,17 +72,24 @@ async def bot_start(message: types.Message):
 
                 deeplink = "none"
                 deeplink = message.get_args()
+
+                if deeplink!="":
+                    actualcity, actualcode, socialnet=linkparser(deeplink)
+                else:
+                    actualcity, actualcode, socialnet=linkparser_default()
+
                 user_collection.insert_one(
                 {"user_id": message.from_user.id,
                 "first_name": xstr(message.from_user.first_name),
                 "last_name": xstr(message.from_user.last_name),
                 "username": xstr(message.from_user.username),
                 "callmeas":"none",
-                "citytag":"none",
-                "city":"none",
+                "citytag":actualcode,
+                "city":actualcity,
                 "came_from": deeplink,
                 "when_came": datetime.now(),
-                "user_photo":pdasasd
+                "user_photo":pdasasd,
+                "socialnet":socialnet
                 })
                 html_text="\n".join(
                     [
@@ -101,56 +109,21 @@ async def bot_start(message: types.Message):
             elif message.from_user.is_bot==False:
                 html_text="\n".join(
                     [
-                        '<b>💎 ООО «Крипто Консалтинг»</b>',
-                        '',
-                        '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-                        '',
-                        '🗣 Консультация и обучение',
-                        '💲 Доверительное управление',
-                        '🎓 Юридическое сопровождение',
-                        '🛡 Холодное хранение',
-                        '💱 Легальный обмен',
-                        '',
-                        'Подписывайтесь на наш Telegram канал:',
-                        '👉 @cryptocons 👈',
-                        # parse_message_by_tag_name(thisuser['citytag'])
+                        system_text_parser('menu_system_text')
+                    ]
+                )         
+                thisuser=user_collection.find_one({'user_id':message.from_user.id})
+                userpartner=get_partner_obj(thisuser['citytag'])
+                
+                await ProjectManage.menu.set()
+                caption_attach="\n".join(
+                    [
+                        userpartner['datatext']['menu']      
                     ]
                 )
-                thisuser=user_collection.find_one({'user_id':message.from_user.id})
-                await ProjectManage.menu.set()
-                photostosend=types.MediaGroup()
-
-                if 'agent_' in get_user_came_from(message.from_user.id):
-                    if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
-                        get_about=get_user_came_from(message.from_user.id)
-                        aboutobj=get_about_links(get_about)
-                        caption_attach="\n".join(
-                            [
-                                aboutobj['name'],
-                                '',
-                                parse_message_by_tag_name(thisuser['citytag']),
-                                
-                            ]
-                        )
-                        photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-                    else:
-                        usertag=get_user_city(message.from_user.id)
-                        aboutobj=get_about_links(usertag+'_link')
-                        caption_attach="\n".join([
-                            parse_message_by_tag_name(thisuser['citytag'])
-                        ])
-                        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
-                else:
-                    usertag=get_user_city(message.from_user.id)
-                    aboutobj=get_about_links(usertag+'_link')
-                    caption_attach="\n".join([
-                        parse_message_by_tag_name(thisuser['citytag'])
-                    ])
-                photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach) 
-                
-
                 await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-                await bot.send_media_group(chat_id=message.from_user.id,media=photostosend)
+                await message.answer_photo(photo=userpartner['menu_photo'], caption=caption_attach)
+                
 #################################################User Meet#############################################33                    
 @dp.callback_query_handler(text='start_meeting_user', state=ProjectManage.startmeeting)
 async def start_meeting_user_func(call:types.CallbackQuery):
@@ -161,148 +134,6 @@ async def start_meeting_user_func(call:types.CallbackQuery):
     )
     await ProjectManage.getnameuser.set()
     await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=None)
-
-
-@dp.callback_query_handler(text="add_city_user_another", state=ProjectManage.getcityuser)
-async def addglblcity_init_func(call: types.CallbackQuery):
-    html_text="\n".join(
-        [
-            '🌇 Напишите название города:'
-        ]
-    )
-    await ProjectManage.addglblcity.set()
-    await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=None ) 
-
-@dp.message_handler(state=ProjectManage.addglblcity)
-async def addglbl_func(message: types.Message):
-    citycode="GLBL"
-    city = message.text
-
-    user_collection.find_and_modify(
-        query={"user_id":message.from_user.id},
-        update={"$set":{"city":city, "citytag":citycode}}
-    )
-
-   
-    html_text="\n".join(
-        [
-            '<b>💎 ООО «Крипто Консалтинг»</b>',
-            '',
-            '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-            '',
-            '🗣 Консультация и обучение',
-            '💲 Доверительное управление',
-            '🎓 Юридическое сопровождение',
-            '🛡 Холодное хранение',
-            '💱 Легальный обмен',
-            '',
-            'Подписывайтесь на наш Telegram канал:',
-            '👉 @cryptocons 👈',
-            # parse_message_by_tag_name(thisuser['citytag'])
-        ]
-    )
-    await ProjectManage.menu.set()
-    photostosend=types.MediaGroup()
-
-    if 'agent_' in get_user_came_from(message.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
-            get_about=get_user_came_from(message.from_user.id)
-            aboutobj=get_about_links(get_about)
-            caption_attach="\n".join(
-                [
-                    aboutobj['name'],
-                    '',
-                    parse_message_by_tag_name(citycode),
-                    
-                ]
-            )
-            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-        else:
-            usertag=get_user_city(message.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')
-            caption_attach="\n".join([
-                parse_message_by_tag_name(citycode)
-            ])
-            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach)      
-    else:
-        usertag=get_user_city(message.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
-        caption_attach="\n".join([
-            parse_message_by_tag_name(citycode)
-        ])
-    photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach) 
-    
-
-    await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-    await bot.send_media_group(chat_id=message.from_user.id,media=photostosend)
-
-
-@dp.callback_query_handler(show_cities_pages.filter(command='pickcityuser'), state=ProjectManage.getcityuser)
-async def pickcityuser_func(call: types.CallbackQuery, callback_data:dict):
-    citycode=callback_data.get("page")
-    city = parse_city(citycode)
-
-
-    user_collection.find_and_modify(
-        query={"user_id":call.from_user.id},
-        update={"$set":{"city":city, "citytag":citycode}}
-    )
-
-
-
-    html_text="\n".join(
-        [
-            '<b>💎 ООО «Крипто Консалтинг»</b>',
-            '',
-            '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-            '',
-            '🗣 Консультация и обучение',
-            '💲 Доверительное управление',
-            '🎓 Юридическое сопровождение',
-            '🛡 Холодное хранение',
-            '💱 Легальный обмен',
-            '',
-            'Подписывайтесь на наш Telegram канал:',
-            '👉 @cryptocons 👈',
-            # parse_message_by_tag_name(citycode)
-        ]
-    )
-    # await state.reset_state()
-    await ProjectManage.menu.set()
-    await call.message.delete()
-    photostosend=types.MediaGroup()
-
-    if 'agent_' in get_user_came_from(call.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
-            get_about=get_user_came_from(call.from_user.id)
-            aboutobj=get_about_links(get_about)
-            caption_attach="\n".join(
-                [
-                    aboutobj['name'],
-                    '',
-                    parse_message_by_tag_name(citycode),
-                    
-                ]
-            )
-            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-        else:
-            usertag=get_user_city(call.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')
-            caption_attach="\n".join([
-                parse_message_by_tag_name(citycode)
-            ])
-            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach)      
-    else:
-        usertag=get_user_city(call.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
-        caption_attach="\n".join([
-            parse_message_by_tag_name(citycode)
-        ])
-    photostosend.attach_photo(photo=photoparser('ad_photo_by_'+citycode+'_1'), caption=caption_attach) 
-    
-
-    await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-    await bot.send_media_group(chat_id=call.from_user.id,media=photostosend)
 
 
 
@@ -318,82 +149,29 @@ async def pickcityuser_func(call: types.CallbackQuery, callback_data:dict):
 
 
 
-@dp.message_handler(state=[ProjectManage.getnameuser, ProjectManage.getcityuser])
+@dp.message_handler(state=[ProjectManage.getnameuser])
 async def askcityuser_func(message: types.Message):
     user_collection.find_and_modify(
         query={"user_id":message.from_user.id},
         update={"$set":{"callmeas":message.text}}
     )
-    
-    page = 1
-    prevpage = page - 1
-    nextpage = page + 1
-    inlinekeys = InlineKeyboardMarkup(row_width=2)
-    x=settings_collection.find_one({"settings":"mainsettings"})
-    cities_obj=x["current_cities"]
-    cities_on_page = cities_obj[((page-1)*5):(5*page)]
 
-    for y in cities_on_page:
-        if y['code']!="GLBL":
-            inlinekeys.add(InlineKeyboardButton(text=y['city'], callback_data=show_cities_pages.new("pickcityuser",page=y['code'])))
-
-
-    
-    
-    if prevpage < 1:
-        prevtoadd=InlineKeyboardButton(
-            text='◀️',
-            callback_data=show_cities_pages.new("usershowcity",page=1)
-        )
-    else:
-        prevtoadd=InlineKeyboardButton(
-            text='◀️',
-            callback_data=show_cities_pages.new("usershowcity",page=prevpage)
-        )
-
-    if  math.ceil(len(cities_obj)/5)==page:
-        nexttoadd=InlineKeyboardButton(
-            text='▶️',
-            callback_data=show_cities_pages.new("usershowcity",page=page)
-        )      
-    else:
-        nexttoadd=InlineKeyboardButton(
-            text='▶️',
-            callback_data=show_cities_pages.new("usershowcity",page=nextpage)
-        )
     html_text="\n".join(
         [
-            '<b>'+message.text+'</b>, из какого вы города?',
-            'Города в списке отображают открытые офисы',
-            '💎 ООО «КриптоКонсалтинг».',
-            'Если ваш город отсутствует, выберите <b>Другой</b>.'
+            system_text_parser('menu_system_text')
         ]
-    )      
-    inlinekeys.add(prevtoadd,nexttoadd)
-    inlinekeys.add(InlineKeyboardButton(text='Другой',callback_data='add_city_user_another'))
-    await ProjectManage.getcityuser.set()
-    # await message.answer_photo(photo=photoparser('useraskcity') ,caption=html_text, parse_mode='HTML', reply_markup=inlinekeys)
-    await message.answer(text=html_text, parse_mode='HTML', reply_markup=inlinekeys)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    )  
+    thisuser=user_collection.find_one({'user_id':message.from_user.id})
+    userpartner=get_partner_obj(thisuser['citytag'])
+    await ProjectManage.menu.set()
+    caption_attach="\n".join(
+        [
+            userpartner['datatext']['menu']      
+        ]
+    )
+    await ProjectManage.menu.set() 
+    await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
+    await message.answer_photo(photo=userpartner['menu_photo'], caption=caption_attach)
 
 
 
@@ -407,17 +185,24 @@ async def menu_hand(message: types.Message, state: FSMContext):
 
         deeplink = "none"
         deeplink = message.get_args()
+
+        if deeplink!="":
+            actualcity, actualcode, socialnet=linkparser(deeplink)
+        else:
+            actualcity, actualcode, socialnet=linkparser_default()
+
         user_collection.insert_one(
         {"user_id": message.from_user.id,
         "first_name": xstr(message.from_user.first_name),
         "last_name": xstr(message.from_user.last_name),
         "username": xstr(message.from_user.username),
         "callmeas":"none",
-        "citytag":"none",
-        "city":"none",
+        "citytag":actualcode,
+        "city":actualcity,
         "came_from": deeplink,
         "when_came": datetime.now(),
-        "user_photo":pdasasd
+        "user_photo":pdasasd,
+        "socialnet":socialnet
         })
         html_text="\n".join(
             [
@@ -468,77 +253,30 @@ async def menu_hand(message: types.Message, state: FSMContext):
         thisuser=user_collection.find_one({'user_id':message.from_user.id})
         html_text="\n".join(
             [
-                '<b>💎 ООО «Крипто Консалтинг»</b>',
-                '',
-                '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-                '',
-                '🗣 Консультация и обучение',
-                '💲 Доверительное управление',
-                '🎓 Юридическое сопровождение',
-                '🛡 Холодное хранение',
-                '💱 Легальный обмен',
-                '',
-                'Подписывайтесь на наш Telegram канал:',
-                '👉 @cryptocons 👈',
-                # parse_message_by_tag_name(thisuser['citytag'])
+                system_text_parser('menu_system_text')
             ]
         )
         await state.reset_state()
         await ProjectManage.menu.set() 
-        photostosend=types.MediaGroup()
 
-        if 'agent_' in get_user_came_from(message.from_user.id):
-            if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
-                get_about=get_user_came_from(message.from_user.id)
-                aboutobj=get_about_links(get_about)
-                caption_attach="\n".join(
-                    [
-                        aboutobj['name'],
-                        '',
-                        parse_message_by_tag_name(thisuser['citytag']),
-                        
-                    ]
-                )
-                photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-            else:
-                usertag=get_user_city(message.from_user.id)
-                aboutobj=get_about_links(usertag+'_link')
-                caption_attach="\n".join([
-                    parse_message_by_tag_name(thisuser['citytag'])
-                ])
-                photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
-        else:
-            usertag=get_user_city(message.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')
-            caption_attach="\n".join([
-                parse_message_by_tag_name(thisuser['citytag'])
-            ])
-            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
-
-        
-         
-
-
-        
-        
-
+        userpartner=get_partner_obj(thisuser['citytag'])
+        await ProjectManage.menu.set()
+        caption_attach="\n".join(
+            [
+                userpartner['datatext']['menu']      
+            ]
+        )
         await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-        await bot.send_media_group(chat_id=message.from_user.id,media=photostosend)
-
-
-
-
+        await message.answer_photo(photo=userpartner['menu_photo'], caption=caption_attach)
 
 
 
 
 @dp.message_handler(content_types=['photo'], state=SupportManage.menu)
 async def parsephoto_hand(message: types.Message, state: FSMContext): 
-    # photoo = settings_collection.find_one({"settings":"mainsettings"})
-    # photoo_add= photoo["photos_profile"]
-    # pdasasd = photoo_add[random.randint(0, 14)]
+   
     await message.answer(text=message.photo[0].file_id)
-    await bot.send_photo(chat_id=message.from_user.id, photo=message.photo[0].file_id)
+    await bot.send_photo(chat_id=message.from_user.id, photo=message.photo[0].file_id, caption=message.caption)
 
 @dp.message_handler(content_types=['video_note'], state=SupportManage.menu)
 async def parse_video_note_hand(message: types.Message, state: FSMContext): 
@@ -562,7 +300,9 @@ async def parse_video_hand(message: types.Message, state: FSMContext):
     for x in photosss:
         await bot.send_photo(chat_id=message.from_user.id, photo=x['photo_id'], caption=x['name']+' '+x['photo_id'])
 
-
+@dp.message_handler(text='createtagg', state=SupportManage.menu)
+async def parse_video_hand(message: types.Message, state: FSMContext): 
+    await message.answer(text=secrets.token_hex(10)+"{:03d}".format(secrets.randbelow(999)))
 
 
 
@@ -601,62 +341,25 @@ async def support_menu_hand(message: types.Message, state: FSMContext):
             )) 
         await state.reset_state()
         await SupportManage.menu.set()     
-        # await message.answer(text=html_text,parse_mode='HTML',reply_markup=supportmenubase )
         await message.answer_photo(photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase )   
     else:    
         thisuser=user_collection.find_one({'user_id':message.from_user.id})
         html_text="\n".join(
             [
-                '<b>💎 ООО «Крипто Консалтинг»</b>',
-                '',
-                '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-                '',
-                '🗣 Консультация и обучение',
-                '💲 Доверительное управление',
-                '🎓 Юридическое сопровождение',
-                '🛡 Холодное хранение',
-                '💱 Легальный обмен',
-                '',
-                'Подписывайтесь на наш Telegram канал:',
-                '👉 @cryptocons 👈',
-                # parse_message_by_tag_name(thisuser['citytag'])
+                system_text_parser('menu_system_text')
             ]
         )
         await state.reset_state()
         await ProjectManage.menu.set() 
-        photostosend=types.MediaGroup()
 
-        if 'agent_' in get_user_came_from(message.from_user.id):
-            if pmessages_collection.count_documents({"tag_name": get_user_came_from(message.from_user.id)})!=0:
-                get_about=get_user_came_from(message.from_user.id)
-                aboutobj=get_about_links(get_about)
-                caption_attach="\n".join(
-                    [
-                        aboutobj['name'],
-                        '',
-                        parse_message_by_tag_name(thisuser['citytag']),
-                        
-                    ]
-                )
-                photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-            else:
-                usertag=get_user_city(message.from_user.id)
-                aboutobj=get_about_links(usertag+'_link')
-                caption_attach="\n".join([
-                    parse_message_by_tag_name(thisuser['citytag'])
-                ])
-                photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
-        else:
-            usertag=get_user_city(message.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')
-            caption_attach="\n".join([
-                parse_message_by_tag_name(thisuser['citytag'])
-            ])
-            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
-        
-
+        userpartner=get_partner_obj(thisuser['citytag'])
+        caption_attach="\n".join(
+            [
+                userpartner['datatext']['menu']      
+            ]
+        )
         await message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-        await bot.send_media_group(chat_id=message.from_user.id,media=photostosend) 
+        await message.answer_photo(photo=userpartner['menu_photo'], caption=caption_attach)
         
 @dp.message_handler(state=SetupBTSstates.getadmincode)
 async def blockbts(message: types.Message):

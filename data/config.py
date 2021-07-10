@@ -21,6 +21,9 @@ pmessages_collection = db.personal_message
 videos_collection = db.videos
 photos_collection=db.photos
 videocircles_collection=db.videocircle
+partner_collection=db.partner
+links_collection=db.partnerlinks
+
 
 channelid=int(os.getenv("channel"))
 

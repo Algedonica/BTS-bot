@@ -14,7 +14,8 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city, get_about_links, get_user_came_from, check_error_ticket
+from utils.misc import system_text_parser,get_partner_obj,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city,   get_user_came_from, check_error_ticket
+from aiogram.utils.parts import safe_split_text
 from aiogram.dispatcher.handler import CancelHandler
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call, about_team_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
@@ -32,14 +33,6 @@ async def clearnotified():
 
             
 scheduler.add_job(clearnotified, 'interval', seconds=180)
-
-
-# @dp.errors_handler(exception=BotBlocked)
-# async def blocked_handler(update: types.Update, exception: BotBlocked):
-#     print(f"Меня заблокировал пользователь!\nСообщение: {update}\nОшибка: {exception}")
-#     j=update.message.chat.id
-#     print(update.from_user.id)
-#     return True
 
 import sys,os
 pathname = os.path.dirname(sys.argv[0]) 
@@ -248,16 +241,8 @@ async def earn_about_us_func(call: CallbackQuery):
         ]
     )
 
-    if 'agent_' in get_user_came_from(call.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
-            get_about=get_user_came_from(call.from_user.id)
-            aboutobj=get_about_links(get_about)
-        else:
-            usertag=get_user_city(call.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')        
-    else:
-        usertag=get_user_city(call.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
+    thisusercity=get_user_city(call.from_user.id)
+    aboutobj=get_partner_obj(thisusercity)
         
 
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
@@ -270,7 +255,7 @@ async def earn_about_us_func(call: CallbackQuery):
         [
         InlineKeyboardButton(
             text='💵 Открыть вклад в SCHUTZ',
-            url=aboutobj['schutz_link']
+            url=aboutobj['datatext']['schutz_link']
             )    
         ],
         [InlineKeyboardButton(
@@ -302,8 +287,7 @@ async def schutz_faq_about_us_func(call: CallbackQuery):
             'Ещё одно доказательство, что Фонд делает такой % прибыли — это статистика отработки по бесплатным ежемесячным рекомендациям, начиная с 2017 года. Все сделки можно проверить в открытом канале Neutrino @neutrinofund.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -317,7 +301,6 @@ async def schutz_faq_about_us_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 @dp.callback_query_handler(text='schutz_faq_about_us_two', state=[ProjectManage.menu])
@@ -329,8 +312,7 @@ async def schutz_faq_about_us_two_func(call: CallbackQuery):
             '<i>Возможно, в 2021 году в международном праве появятся законы по которым финансовые регуляторы смогут выдавать страховки управляющим фондам, компаниям, занимающимся управлением криптовалютами (именно торговлей!). Сейчас таких не существует, поскольку только-только создаются прецеденты регулирования на основании которых пишутся законы. Регуляторы во всем мире еще не придумали, как регулировать деятельность криптофондов. Как только такая возможность станет реальной, в фонде сразу появятся такие лицензии, предоставляющие клиенту гарантии.  Сейчас гарантия фонда — это 4 года работы и 100% выплат всем инвесторам, что подтверждено блокчейном Ethereum. Это свидетельствует об устойчивости компании, о наличии долгосрочной стратегии. Основатель и руководитель Фонда также имеет проекты, которые уже зарегистрированы в 🇨🇭Швейцарии, 🇱🇮Лихтенштейне, 🇦🇪ОАЭ и 🇳🇿 Новой Зеландии.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -348,7 +330,6 @@ async def schutz_faq_about_us_two_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 @dp.callback_query_handler(text='schutz_faq_about_us_three', state=[ProjectManage.menu])
@@ -360,8 +341,6 @@ async def schutz_faq_about_us_three_func(call: CallbackQuery):
             '<i>В соответствии с Федеральным законом «О цифровых финансовых активах, цифровой валюте и о внесении изменений в отдельные законодательные акты Российской Федерации», на территории РФ криптовалюта признана имуществом, и с доходов уже в скором времени нужно будет платить налог. Закон разрешает обмен криптовалют в РФ у лицензированных источников. Лицензии будут выдаваться летом 2021. Сейчас обмен можно делать на криптобиржах, где это доступно. Существуют специальные площадки для обмена, например, Bestchange.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -379,7 +358,7 @@ async def schutz_faq_about_us_three_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 @dp.callback_query_handler(text='schutz_faq_about_us_four', state=[ProjectManage.menu])
@@ -393,8 +372,7 @@ async def schutz_faq_about_us_four_func(call: CallbackQuery):
             'Мы не берем на себя обязательства каким-либо образом страховать вклады клиентов, показываем лучший опыт заработка в криптовалютной сфере. У нас нет ни одного клиента которого как-то обманули и он потерял деньги. Только положительный опыт и успешные примеры. Мы открыты, а наша деятельность прозрачна.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -412,7 +390,6 @@ async def schutz_faq_about_us_four_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 @dp.callback_query_handler(text='schutz_faq_about_us_five', state=[ProjectManage.menu])
@@ -424,8 +401,7 @@ async def schutz_faq_about_us_five_func(call: CallbackQuery):
             '<i>Если что-то случается, мы, как проводник информации, как консультационное агентство расскажем клиенту о произошедших событиях в фонде. Мы держим клиентов информированными. При этом стоит помнить, что ООО «Крипто Консалтинг» рекомендует вам воспользоваться теми или иными сервисами и проектами, а не обязывает или принуждает. Мы рекомендуем лучшие решения на рынке, а решение принимает клиент. Если вы не готовы брать на себя риски, вам не стоит заходить на рынок криптовалют.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -443,7 +419,6 @@ async def schutz_faq_about_us_five_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 @dp.callback_query_handler(text='schutz_faq_about_us_six', state=[ProjectManage.menu])
@@ -457,8 +432,7 @@ async def schutz_faq_about_us_six_func(call: CallbackQuery):
             'С компанией ООО «Крипто Консалтинг» клиент подписывает бумажный договор на оказание КОНСУЛЬТАЦИОНЫХ услуг. Наша задача провести клиента по всем этапам безопасной сделки: от помощи в переводе его криптовалют на кошелек, до консультаций по сохранению всех приватных ключей, паролей, доступов. Консультации по ведению счёта, комиссиям в сети блокчейн, по обращению со счетом, по выводу в выгодный для клиента момент из USDT в рубли.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -476,7 +450,7 @@ async def schutz_faq_about_us_six_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 @dp.callback_query_handler(text='schutz_faq_about_us_seven', state=[ProjectManage.menu])
@@ -488,8 +462,7 @@ async def schutz_faq_about_us_seven_func(call: CallbackQuery):
             '<i>Фонд SCHUTZ до 2021 года ни разу не рекламировался в сети. Фонд не создавал рекламных кампаний, не привлекал блогеров или копирайтеров для разборов, потому что это просто было не нужно. Фонд существует с 2017 года, это можно проверить по открытому каналу @neutrinofund. Так же в канале возможно проследить, когда для инвесторов была открыта возможность инвестировать и получать с инвестиций процент. Ранее фонд назывался NTS 80, по количеству процентов, которые он увеличивает инвесторам за год (расшифровка Neutrino Token Standart). В 2021 году фонд произвел ребрендинг, и теперь он называется – SCHUTZ.</i>'
         ]
     )
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_link')
+
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [
         InlineKeyboardButton(
@@ -503,7 +476,7 @@ async def schutz_faq_about_us_seven_func(call: CallbackQuery):
             )  
         ]])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
     await bot.send_photo(chat_id=call.from_user.id, caption=html_text, parse_mode='HTML', photo=photoparser('schutz_photo_ad'), reply_markup=inlinemenu)
 
 
@@ -544,16 +517,8 @@ async def SIMBA_about_us_func(call: CallbackQuery):
             'Как? 📃Читайте далее...'
         ]
     )
-    if 'agent_' in get_user_came_from(call.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
-            get_about=get_user_came_from(call.from_user.id)
-            aboutobj=get_about_links(get_about)
-        else:
-            usertag=get_user_city(call.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')        
-    else:
-        usertag=get_user_city(call.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
+    thisusercity=get_user_city(call.from_user.id)
+    aboutobj=get_partner_obj(thisusercity)
         
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
@@ -563,12 +528,12 @@ async def SIMBA_about_us_func(call: CallbackQuery):
         ],
         [InlineKeyboardButton(
             text='🔗 Официальный сайт',
-            url=aboutobj['simba_link_landing']
+            url=aboutobj['datatext']['simba_link_landing']
             )  
         ],
         [InlineKeyboardButton(
             text='🔑 Зарегистрироваться',
-            url=aboutobj['simba_link_reg']
+            url=aboutobj['datatext']['simba_link_reg']
             )  
         ],
         [InlineKeyboardButton(
@@ -578,7 +543,6 @@ async def SIMBA_about_us_func(call: CallbackQuery):
         ],
     ])
     await call.message.delete()
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
     await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='SIMBA_about_us_two', state=[ProjectManage.menu])
@@ -609,7 +573,6 @@ async def SIMBA_about_us_two_func(call: CallbackQuery):
     ])
     await call.message.delete()
     await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
 
 @dp.callback_query_handler(text='SIMBA_about_us_three', state=[ProjectManage.menu])
 async def SIMBA_about_us_three_func(call: CallbackQuery):
@@ -642,7 +605,7 @@ async def SIMBA_about_us_three_func(call: CallbackQuery):
     ])
     await call.message.delete()
     await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
-    # await bot.send_video(chat_id=call.from_user.id, video=parse_video_by_tag_name('about_kk_square'), reply_markup=inlinemenu, caption=html_text)
+
 
 @dp.callback_query_handler(text='SIMBA_about_us_four', state=[ProjectManage.menu])
 async def SIMBA_about_us_four_func(call: CallbackQuery):
@@ -651,20 +614,12 @@ async def SIMBA_about_us_four_func(call: CallbackQuery):
             'Регистрируйтесь в 🦁SIMBA Storage сейчас и храните ваши биткойны в безопасном хранилище в 4-х странах 🇨🇭🇱🇮🇦🇪🇳🇿'
         ]
     )
-    if 'agent_' in get_user_came_from(call.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
-            get_about=get_user_came_from(call.from_user.id)
-            aboutobj=get_about_links(get_about)
-        else:
-            usertag=get_user_city(call.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')        
-    else:
-        usertag=get_user_city(call.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
+    thisusercity=get_user_city(call.from_user.id)
+    aboutobj=get_partner_obj(thisusercity)
     inlinemenu=InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
             text='🔑 Зарегистрироваться',
-            url=aboutobj['simba_link_reg']
+            url=aboutobj['datatext']['simba_link_reg']
             )  
         ],
         [InlineKeyboardButton(
@@ -677,14 +632,11 @@ async def SIMBA_about_us_four_func(call: CallbackQuery):
     await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('simba_photo_ad'), reply_markup=inlinemenu, caption=html_text)
 
 
-# # about_team_call.filter(command='showaboutcard', param1=1, param2='none')
-# @dp.callback_query_handler(show_cities_pages.filter(command='showcities'), state=SupportManage.menu)
-# async def show_cities_func(call: types.CallbackQuery, callback_data:dict):
 
 @dp.callback_query_handler(about_team_call.filter(command='showaboutcard'), state=[ProjectManage.menu])
 async def team_about_us_func(call: CallbackQuery,  callback_data:dict):
-    usertag=get_user_city(call.from_user.id)
-    aboutobj=get_about_links(usertag+'_about_team_info')
+    thisusercity=get_user_city(call.from_user.id)
+    aboutobj=get_partner_obj(thisusercity)
     team_cards=aboutobj['team_cards']
     
 
@@ -692,22 +644,12 @@ async def team_about_us_func(call: CallbackQuery,  callback_data:dict):
     page = int(page)
 
     if page==1:
-        if 'agent_' in get_user_came_from(call.from_user.id):
-            get_about=get_user_came_from(call.from_user.id)
-            thiscard=get_about_links(get_about)
-            prevpage = page - 1
-            nextpage = 9999
+        prevpage = page - 1
+        nextpage = page + 1
 
-
-            thiscardtext=thiscard['bio']
-            thiscardphoto=thiscard['photo']
-        else:
-            prevpage = page - 1
-            nextpage = page + 1
-
-            thiscard=team_cards[page-1]
-            thiscardtext=thiscard['text']
-            thiscardphoto=thiscard['photo']
+        thiscard=team_cards[page-1]
+        thiscardtext=thiscard['text']
+        thiscardphoto=thiscard['photo']
     elif page==9999:
         prevpage = 1
         nextpage = 2
@@ -1068,58 +1010,23 @@ async def user_come_to_menu(call:types.CallbackQuery):
     thisuser=user_collection.find_one({'user_id':call.from_user.id})
     html_text="\n".join(
         [
-            '<b>💎 ООО «Крипто Консалтинг»</b>',
-            '',
-            '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-            '',
-            '🗣 Консультация и обучение',
-            '💲 Доверительное управление',
-            '🎓 Юридическое сопровождение',
-            '🛡 Холодное хранение',
-            '💱 Легальный обмен',
-            '',
-            'Подписывайтесь на наш Telegram канал:',
-            '👉 @cryptocons 👈',
-            # parse_message_by_tag_name(thisuser['citytag'])
+            
+            system_text_parser('menu_system_text')
+            
         ]
     )
     await call.message.delete()
-    # await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
     await ProjectManage.menu.set()
-    photostosend=types.MediaGroup()
 
-    if 'agent_' in get_user_came_from(call.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
-            get_about=get_user_came_from(call.from_user.id)
-            aboutobj=get_about_links(get_about)
-            caption_attach="\n".join(
-                [
-                    aboutobj['name'],
-                    '',
-                    parse_message_by_tag_name(thisuser['citytag']),
-                    
-                ]
-            )
-            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-        else:
-            usertag=get_user_city(call.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')
-            caption_attach="\n".join([
-                parse_message_by_tag_name(thisuser['citytag'])
-            ])
-            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
-    else:
-        usertag=get_user_city(call.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
-        caption_attach="\n".join([
-            parse_message_by_tag_name(thisuser['citytag'])
-        ])
-        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
-    
 
+    userpartner=get_partner_obj(thisuser['citytag'])
+    caption_attach="\n".join(
+        [
+            userpartner['datatext']['menu']      
+        ]
+    )
     await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-    await bot.send_media_group(chat_id=call.from_user.id,media=photostosend)
-
+    await bot.send_photo(chat_id=call.from_user.id,photo=userpartner['menu_photo'], caption=caption_attach)
 
 @dp.callback_query_handler(text='ivegotit', state=[SupportManage.menu, SupportManage.onair])
 async def igotiwork(call:CallbackQuery):
@@ -1134,18 +1041,24 @@ async def end_support(message: types.Message):
     if thisicket!=None:
         counttickets=ticket_collection.find().count()+1
 
-        operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
-        operatorcallmeas=operatornickname['callmeas']
-        operatornickname=operatornickname['username']
+        if thisicket['operator']!='none':
+            operatornickname=staff_collection.find_one({'user_id':thisicket['operator']})
+
+            operatorcallmeas=operatornickname['callmeas']
+            operatornickname=operatornickname['username']
+            if operatornickname=='none':
+                operatornickname='Без ника'
+            else:
+                operatornickname="@"+operatornickname
+        else:
+            operatornickname='Без оператора'
+            operatorcallmeas='клиент завершил диалог до подключения'
 
         clientnickname=user_collection.find_one({'user_id':thisicket['userid']})
         clientcallmeas=clientnickname['callmeas']
         clientnickname=clientnickname['username']
 
-        if operatornickname=='none':
-            operatornickname='Без ника'
-        else:
-            operatornickname="@"+operatornickname
+        
 
         if clientnickname=='none':
             clientnickname='Без ника'
@@ -1173,7 +1086,18 @@ async def end_support(message: types.Message):
             ]
         ) 
         ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere}})
-        await bot.send_message(chat_id=channelid, text=datamessagehere)
+        # if len(datamessagehere)>4000:
+        #     messageobj=safe_split_text(datamessagehere)
+        #     mesid=await bot.send_message(chat_id=channelid, text=messageobj[0])
+            
+        #     for mesitem in messageobj[1:]:
+        #         print(mesitem)
+        #         # await bot.send_message(chat_id=-1001164979016, text=mesitem, reply_to_message_id=mesid.message_id)
+            
+        # else:
+        mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+
+        # ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
         
 
 
@@ -1198,19 +1122,7 @@ async def end_support(message: types.Message):
     thisuser=user_collection.find_one({'user_id':message.from_user.id})
     html_text="\n".join(
         [
-            '<b>💎 ООО «Крипто Консалтинг»</b>',
-            '',
-            '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-            '',
-            '🗣 Консультация и обучение',
-            '💲 Доверительное управление',
-            '🎓 Юридическое сопровождение',
-            '🛡 Холодное хранение',
-            '💱 Легальный обмен',
-            '',
-            'Подписывайтесь на наш Telegram канал:',
-            '👉 @cryptocons 👈',
-            # parse_message_by_tag_name(thisuser['citytag'])
+            system_text_parser('menu_system_text')
         ]
     )
     await message.answer_photo(photo=photoparser('operatorticketfinished') ,parse_mode='HTML')
@@ -1332,7 +1244,18 @@ async def end_supportbysupport_error(call: CallbackQuery):
             ]
         ) 
         ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere}})
-        await bot.send_message(chat_id=channelid, text=datamessagehere)
+        # if len(datamessagehere)>4000:
+        #     messageobj=safe_split_text(datamessagehere)
+        #     mesid=await bot.send_message(chat_id=channelid, text=messageobj[0])
+            
+        #     for mesitem in messageobj[1:]:
+        #         print(mesitem)
+        #         # await bot.send_message(chat_id=-1001164979016, text=mesitem, reply_to_message_id=mesid.message_id)
+            
+        # else:
+        mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+
+        # ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
 
     html_text="\n".join(
         [
@@ -1410,7 +1333,7 @@ async def end_supportbysupport(message: types.Message):
 
             ]
         )
-        ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
+        
         
         html_text2="\n".join(
             [
@@ -1424,9 +1347,22 @@ async def end_supportbysupport(message: types.Message):
             )]
         ]) 
         
+# for item in a_list[1:] :
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
         await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
-        await bot.send_message(chat_id=channelid, text=datamessagehere)
+        mesid='none'
+        # if len(datamessagehere)>4000:
+        #     messageobj=safe_split_text(datamessagehere)
+        #     mesid=await bot.send_message(chat_id=channelid, text=messageobj[0])
+            
+        #     for mesitem in messageobj[1:]:
+        #         print(mesitem)
+        #         # await bot.send_message(chat_id=-1001164979016, text=mesitem, reply_to_message_id=mesid.message_id)
+            
+        # else:
+        mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+
+        ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
     html_text="\n".join(
         [
             '👇 Следите за новыми запросами! 👇'
@@ -1458,89 +1394,24 @@ async def end_supportbysupport(message: types.Message):
     
     await SupportManage.menu.set()   
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @dp.callback_query_handler(text='to_client_menu', state=ProjectManage.awaitingsup)
 async def clientgogotomenucallback(call: CallbackQuery):
     thisuser=user_collection.find_one({'user_id':call.from_user.id})
     html_text="\n".join(
         [
-            '<b>💎 ООО «Крипто Консалтинг»</b>',
-            '',
-            '<b>Профессионально окажем консультацию в сфере криптовалют, а также расскажем о заработке, хранении, уплате налогов и переводах.</b>',
-            '',
-            '🗣 Консультация и обучение',
-            '💲 Доверительное управление',
-            '🎓 Юридическое сопровождение',
-            '🛡 Холодное хранение',
-            '💱 Легальный обмен',
-            '',
-            'Подписывайтесь на наш Telegram канал:',
-            '👉 @cryptocons 👈',
-            # parse_message_by_tag_name(thisuser['citytag'])
+            system_text_parser('menu_system_text')
         ]
     )
     await call.message.delete()
-    # await bot.send_photo(chat_id=call.from_user.id,photo=photoparser('usermainmenu'),caption=html_text,parse_mode='HTML', reply_markup=defaultmenu)
     await ProjectManage.menu.set()
-
-    photostosend=types.MediaGroup()
-
-    if 'agent_' in get_user_came_from(call.from_user.id):
-        if pmessages_collection.count_documents({"tag_name": get_user_came_from(call.from_user.id)})!=0:
-            get_about=get_user_came_from(call.from_user.id)
-            aboutobj=get_about_links(get_about)
-            caption_attach="\n".join(
-                [
-                    aboutobj['name'],
-                    '',
-                    parse_message_by_tag_name(thisuser['citytag']),
-                    
-                ]
-            )
-            photostosend.attach_photo(photo=aboutobj['photo'], caption=caption_attach) 
-        else:
-            usertag=get_user_city(call.from_user.id)
-            aboutobj=get_about_links(usertag+'_link')
-            caption_attach="\n".join([
-                parse_message_by_tag_name(thisuser['citytag'])
-            ])
-            photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)      
-    else:
-        usertag=get_user_city(call.from_user.id)
-        aboutobj=get_about_links(usertag+'_link')
-        caption_attach="\n".join([
-            parse_message_by_tag_name(thisuser['citytag'])
-        ])
-        photostosend.attach_photo(photo=photoparser('ad_photo_by_'+thisuser['citytag']+'_1'), caption=caption_attach)
-    
-
+    userpartner=get_partner_obj(thisuser['citytag'])
+    caption_attach="\n".join(
+        [
+            userpartner['datatext']['menu']      
+        ]
+    )
     await call.message.answer_photo(photo=photoparser('usermainmenu'), caption=html_text ,reply_markup=defaultmenu)
-    await bot.send_media_group(chat_id=call.from_user.id,media=photostosend)
+    await bot.send_photo(chat_id=call.from_user.id,photo=userpartner['menu_photo'], caption=caption_attach)
 
 @dp.callback_query_handler(text='tonewtickets', state=SupportManage.menu)
 async def tonewticketsfunc(call:types.CallbackQuery):
@@ -2263,10 +2134,13 @@ async def showcard(call:types.CallbackQuery, callback_data:dict):
     await call.answer(cache_time=1)
     thisicket=ticket_collection.find_one({"ticketid":callback_data.get("ticketid")})
     thisuser = user_collection.find_one({"user_id":thisicket['userid']})
+    x=''
+    if thisuser['username']!='none':
+        x=' (@'+thisuser['username']+')'
     html_text="\n".join(
         [
             '<b>ID тикета: '+thisicket["ticketid"]+'</b> ',
-            '<b>'+thisuser['callmeas']+':</b> '+thisicket['title'],
+            '<b>'+thisuser['callmeas']+x+':</b> '+thisicket['title'],
             '<b>Город: </b>'+thisuser['city']
         ]
     )        
@@ -2323,7 +2197,7 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
         # print(thisoperator['callmeas'])
         if thisoperator['photo_avatar']!='none':
             try:
-                print('yos')
+                
                 await bot.send_photo(chat_id=thisicket['userid'],caption='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML', photo=thisoperator['photo_avatar'])
             except:
                 error_ticket= await check_error_ticket(thisicket['ticketid'])
@@ -2340,7 +2214,7 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
                 raise CancelHandler()
         else:    
             try:
-                print('yos')
+               
                 await bot.send_message(chat_id=thisicket['userid'],text='👨‍💻 <b>'+thisoperator['callmeas']+'</b> подключился к диалогу',parse_mode='HTML')
             except:
                 error_ticket= await check_error_ticket(thisicket['ticketid'])
@@ -2368,8 +2242,9 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
         #проверка на билет
         await bot.send_photo(chat_id=call.from_user.id,parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=opentickets)
         raise CancelHandler()
+
     
-    
+    #чееее
     await call.message.delete()
     
     await bot.send_photo(chat_id=call.from_user.id,caption=html_text,parse_mode='HTML', reply_markup=operatorcontrol,photo=photoparser('changed'))

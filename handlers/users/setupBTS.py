@@ -32,7 +32,8 @@ async def approveadmincode (message: types.Message, state: FSMContext):
                     "callmeas": message.from_user.first_name,
                     "staffrole":"owner",
                     "city_code":"none",
-                    "notified":"disabled"})
+                    "notified":"disabled",
+                    'soicalnet':'none'})
         settings_collection.insert_one({
             "ondev":True,
             "settings":"mainsettings",
