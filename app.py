@@ -4,7 +4,7 @@ from handlers.users.echo import scheduler
 async def on_startup(dp):
     import filters
     import middlewares
-    filters.setup(dp)
+    filters.setup(dp) 
     middlewares.setup(dp)
 
     from utils.notify_admins import on_startup_notify
