@@ -12,7 +12,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel
+from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, issupport
 
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
@@ -212,9 +212,34 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
         supportmenubase.add(InlineKeyboardButton(
             text='🗄 Отчеты',
             callback_data='to_csv_tables'
-        ))      
+        )) 
+         
     await bot.send_message(chat_id=message.from_user.id,text='Успешно',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
     await bot.send_photo(chat_id=message.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     await state.reset_state()
     await SupportManage.menu.set()
     
+
+
+
+@dp.message_handler(text="/vm", state=[SupportManage.menu])
+async def reverserole_for_staff(message: types.Message, state: FSMContext):
+    if issupport(message.from_user.id)==True:
+        await state.reset_state()
+        await ProjectManage.menu.set()
+        staff_collection.find_and_modify( 
+            query={"user_id":message.from_user.id}, 
+            update={ "$set": { 'isreverse': True} }
+            )
+        await message.answer('Напишите что-нибудь', reply_markup=ReplyKeyboardRemove()) 
+
+@dp.message_handler(text="/vm", state=[ProjectManage.menu])
+async def reverserole_for_staff(message: types.Message, state: FSMContext):
+    if issupport(message.from_user.id)==True:
+        await state.reset_state()
+        await SupportManage.menu.set() 
+        staff_collection.find_and_modify( 
+            query={"user_id":message.from_user.id}, 
+            update={ "$set": { 'isreverse': False} }
+            )
+        await message.answer('Напишите что-нибудь', reply_markup=ReplyKeyboardRemove())    

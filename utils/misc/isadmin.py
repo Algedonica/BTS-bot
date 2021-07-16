@@ -26,6 +26,16 @@ def support_role_check(x):
         return 'MAIN'      
     else:
         return 'PLUS'
+
+def reverse_check(x):
+    thisuser=staff_collection.find_one({"user_id":x})
+    if thisuser!=None:
+        if thisuser["isreverse"]==True:
+            return False      
+        else:
+            return True
+    else:
+        return True
 # def parse_city(x):
 #     asd=settings_collection.find_one({"settings":"mainsettings"})
 #     cities_obj=asd["current_cities"]

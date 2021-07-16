@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from loader import dp,bot
 from states import ProjectManage,SupportManage, SetupBTSstates
 from aiogram.dispatcher import FSMContext
-from utils.misc import get_partner_obj, system_text_parser,issupport, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from,   get_user_city, linkparser, linkparser_default
+from utils.misc import reverse_check,get_partner_obj, system_text_parser,issupport, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from,   get_user_city, linkparser, linkparser_default
 from aiogram.types import InputMediaPhoto
 from keyboards.default import defaultmenu,operatorshowuser
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages
@@ -219,7 +219,7 @@ async def menu_hand(message: types.Message, state: FSMContext):
         ]) 
         await bot.send_message(chat_id= message.from_user.id, text=html_text,parse_mode='HTML', reply_markup=inlinebutt)
         await ProjectManage.startmeeting.set()
-    elif issupport(message.from_user.id) == True:
+    elif issupport(message.from_user.id) == True and reverse_check(message.from_user.id) == True:
         html_text="\n".join(
             [
                 '👇 Следите за новыми запросами! 👇'
@@ -313,7 +313,7 @@ async def parse_video_hand(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=SupportManage.menu)
 async def support_menu_hand(message: types.Message, state: FSMContext):  
-    if issupport(message.from_user.id) == True:
+    if issupport(message.from_user.id) == True and reverse_check(message.from_user.id) == True:
         html_text="\n".join(
             [
                 '👇 Следите за новыми запросами! 👇'

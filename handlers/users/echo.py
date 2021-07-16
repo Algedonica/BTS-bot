@@ -905,7 +905,7 @@ async def initializing_support (message: types.Message):
     await message.answer(text=html_text,parse_mode='HTML',reply_markup=userendsupport)
     await ProjectManage.awaitingsup.set()
 
-    sups = staff_collection.find({"staffrole":"support","notified":"none","city_code":user['citytag']})
+    sups = staff_collection.find({"staffrole":"support","notified":"none","city_code":user['citytag'], 'isreverse':False})
     gotgot = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(
             text='Окей',
