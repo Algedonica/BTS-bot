@@ -23,9 +23,11 @@ photos_collection=db.photos
 videocircles_collection=db.videocircle
 partner_collection=db.partner
 links_collection=db.partnerlinks
+broadcast_collection=db.broadcast
 
 
-channelid=int(os.getenv("channel"))
+settings_obj=settings_collection.find_one({"settings":"mainsettings"})
+channelid=settings_obj['main_channel_id']
 
 BOT_TOKEN = str(os.getenv("BOT_TOKEN"))
 admins = [

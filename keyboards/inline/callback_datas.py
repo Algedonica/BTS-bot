@@ -8,3 +8,5 @@ edit_something_admin=CallbackData("edit_something_admin_factory","command","some
 csv_tables_call = CallbackData("showcsvpages_factory","command","param1","param2")
 knowledge_list_call= CallbackData("knowledge_list_factory","command","param1","param2")
 about_team_call= CallbackData("about_team_factory","command","param1","param2")
+
+show_broadcast_pages=CallbackData("brdcstfctr","command","param1","param2")

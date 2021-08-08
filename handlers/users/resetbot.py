@@ -12,7 +12,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, issupport
+from utils.misc import build_support_menu,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, issupport
 
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
@@ -53,20 +53,16 @@ async def resetbot_byuser(message: types.Message):
 
         datamessagehere = "\n".join(
             [
-                '<b>Обращение № '+str(counttickets)+'</b>',
-                thisicket['title'],
-                '',
+                '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
+                '<b>'+thisicket['title']+'</b>',
                 '🗣 '+clientnickname+' - '+clientcallmeas,
-                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
-                '',
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                '',
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
                 thisicket['ticketid'],
                 '',
-                thisicket["messagedata"],
-                '',
-                '=========================',
-                '',
-                "Диалог закрыт клиентом ",
+                '===',
+                "🗣 Закрыт клиентом",
                 "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
 
             ]
@@ -153,20 +149,16 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
 
         datamessagehere = "\n".join(
             [
-                '<b>Обращение № '+str(counttickets)+'</b>',
-                thisicket['title'],
-                '',
+                '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
+                '<b>'+thisicket['title']+'</b>',
                 '🗣 '+clientnickname+' - '+clientcallmeas,
-                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
-                '',
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                '',
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
                 thisicket['ticketid'],
                 '',
-                thisicket["messagedata"],
-                '',
-                '=========================',
-                '',
-                "Диалог закрыт оператором ",
+                '===',
+                "👨‍💻 Закрыт оператором",
                 "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
 
             ]
@@ -187,32 +179,7 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
         await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
         await bot.send_message(chat_id=channelid, text=datamessagehere)
-    html_text="\n".join(
-        [
-            '👇 Следите за новыми запросами! 👇'
-        ]
-    )
-    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='📄 Входящие запросы',
-            callback_data='to_tickets'
-        )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
-    ])
-
-    if isadmin(message.from_user.id)== True:
-        supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-    if support_role_check(message.from_user.id)== "PLUS":
-        supportmenubase.add(InlineKeyboardButton(
-            text='🗄 Отчеты',
-            callback_data='to_csv_tables'
-        )) 
+    html_text,supportmenubase=build_support_menu(message.from_user.id)
          
     await bot.send_message(chat_id=message.from_user.id,text='Успешно',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
     await bot.send_photo(chat_id=message.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 

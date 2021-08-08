@@ -1,6 +1,11 @@
+from pymongo import settings
 from data.config import partner_collection,staff_collection, ticket_collection, settings_collection, pmessages_collection, videos_collection, photos_collection, videocircles_collection, channelid, user_collection, links_collection
 from loader import dp, bot
 from datetime import datetime
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+
+
 def issupport(x):
     thisuser=staff_collection.find({"user_id":x, "$or":[{"staffrole":"support"},{"staffrole":"owner"}, {"staffrole":"admin"}]})
     if thisuser.count()==1:
@@ -20,6 +25,16 @@ def isadmin(x):
     else:
         return False
 
+def ispartnerowner(x):
+    partner_objs=partner_collection.find({'owned_by':x})
+    if partner_objs==None:
+        return 'none'
+    else:
+        ret_arr=[]
+        for partner in partner_objs:
+            ret_arr.append(partner['unique_id'])
+        return ret_arr
+            
 def support_role_check(x):
     thisuser=staff_collection.find_one({"user_id":x})
     if thisuser["role"]=="1":
@@ -46,6 +61,11 @@ def reverse_check(x):
 #             break
 #     return gotcha
 
+
+def get_partner_channel(x):
+    asd=partner_collection.find_one({'system_tag':x})
+    channel_partner=asd["channel_id"]
+    return channel_partner
 def get_user_city(x):
     asd=user_collection.find_one({'user_id':x})
     cities_obj=asd["citytag"]
@@ -246,3 +266,62 @@ def system_text_parser(x):
 def get_partner_obj(x):
     asd=partner_collection.find_one({'system_tag':x})
     return asd
+
+
+def build_support_menu(x):
+    html_text="\n".join(
+        [
+            '👇 Следите за новыми запросами! 👇'
+        ]
+    )
+    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='📄 Входящие запросы',
+            callback_data='to_tickets'
+        )],
+        [InlineKeyboardButton(
+            text='⚙️ Настройки (в разработке)',
+            callback_data='to_settings'
+        )]
+    ]) 
+    if isadmin(x)== True:
+        supportmenubase.add(InlineKeyboardButton(
+        text='💎 Админпанель',
+        callback_data='to_admin_menu'
+    ))
+    if support_role_check(x)== "PLUS":
+        supportmenubase.add(InlineKeyboardButton(
+            text='🗄 Отчеты',
+            callback_data='to_csv_tables'
+        ))
+        supportmenubase.add(InlineKeyboardButton(
+            text='💌 Рассылка',
+            callback_data='to_broadcast_admin'
+        ))
+
+
+    return html_text, supportmenubase
+
+
+
+
+def group_valid_check(x):
+    asd=[]
+    settings_obj=settings_collection.find_one({"settings":"mainsettings"})
+    asd.append(settings_obj['main_channel_id'])
+    asd.append(settings_obj['main_group_id'])
+    
+    partners=partner_collection.find()
+    for xy in partners:
+        if xy['channel_id']!='none':
+            asd.append(xy['channel_id'])
+        if xy['group_id']!='none':
+            asd.append(xy['group_id'])
+
+    if x in asd:
+        return True
+    else:
+        return False
+    
+
+

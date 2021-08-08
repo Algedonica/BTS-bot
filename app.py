@@ -1,6 +1,7 @@
+from handlers.users import broadcaster
 from utils.set_bot_commands import set_default_commands
 from handlers.users.echo import scheduler
-
+from handlers.users.broadcaster import broadcaster_startup
 async def on_startup(dp):
     import filters
     import middlewares
@@ -11,6 +12,7 @@ async def on_startup(dp):
     await on_startup_notify(dp)
     scheduler.start()  
     await set_default_commands(dp)
+    await broadcaster_startup()
 
 async def shutdown(dp):
     await dp.storage.close()

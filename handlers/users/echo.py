@@ -3,7 +3,7 @@ import math
 from datetime import datetime
 from aiogram import types
 from loader import dp, bot
-from data.config import user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection, channelid
+from data.config import links_collection, partner_collection, user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection, channelid
 from states import ProjectManage,SupportManage
 from aiogram.types import CallbackQuery,ReplyKeyboardRemove, InputFile
 from aiogram.utils.callback_data import CallbackData
@@ -14,7 +14,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import system_text_parser,get_partner_obj,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city,   get_user_came_from, check_error_ticket
+from utils.misc import get_partner_channel,build_support_menu,system_text_parser,get_partner_obj,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, get_user_city,   get_user_came_from, check_error_ticket
 from aiogram.utils.parts import safe_split_text
 from aiogram.dispatcher.handler import CancelHandler
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call, about_team_call
@@ -543,7 +543,6 @@ async def team_about_us_func(call: CallbackQuery,  callback_data:dict):
     aboutobj=get_partner_obj(thisusercity)
     team_cards=aboutobj['team_cards']
     
-
     page = callback_data.get("param1")
     page = int(page)
 
@@ -882,6 +881,17 @@ async def initializing_support (message: types.Message):
 
     ticketid=user['citytag']+'-'+secrets.token_hex(4)+'-'+"{:03d}".format(secrets.randbelow(999))
 
+    extradd={
+        "side":"fromuser" ,
+        "date": datetime.now(), 
+        "text":'<b>❓Вопрос: </b>'+message.text,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"text",
+        "mediaid":"none",
+        "isread":True}
+
+
     if ticket_collection.count_documents({"ticketid": ticketid}) == 0 and message.from_user.is_bot==False:
         ticket_collection.insert_one(
         {"ticketid": ticketid,
@@ -891,9 +901,12 @@ async def initializing_support (message: types.Message):
         "title": message.text,
         "userid":  message.from_user.id,
         "messagedata":"",
-        "messagedata_timed":"",
-        "messagedata_operator":"",
-        "citytag":user['citytag']})
+        "original_channel":"",
+        "original_id":"",
+        "original_channel_partner":"none",
+        "original_id_partner":"none",
+        "citytag":user['citytag'],
+        'extrafield':[extradd]})
     
     html_text="\n".join(
         [
@@ -979,38 +992,54 @@ async def end_support(message: types.Message):
 
         datamessagehere = "\n".join(
             [
-                '<b>Обращение № '+str(counttickets)+'</b>',
-                thisicket['title'],
-                '',
+                '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
+                '<b>'+thisicket['title']+'</b>',
                 '🗣 '+clientnickname+' - '+clientcallmeas,
-                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
-                '',
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                '',
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
                 thisicket['ticketid'],
                 '',
-                thisicket["messagedata"],
-                '',
-                '=========================',
-                '',
-                "Диалог закрыт клиентом ",
+                '===',
+                "🗣 Закрыт клиентом",
                 "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
-
             ]
-        ) 
-        ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere}})
-        # if len(datamessagehere)>4000:
-        #     messageobj=safe_split_text(datamessagehere)
-        #     mesid=await bot.send_message(chat_id=channelid, text=messageobj[0])
-            
-        #     for mesitem in messageobj[1:]:
-        #         print(mesitem)
-        #         # await bot.send_message(chat_id=-1001164979016, text=mesitem, reply_to_message_id=mesid.message_id)
-            
-        # else:
-        mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+        )
+        tomad= "\n".join([
+            "Диалог закрыт клиентом ",
+            "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+        ])
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(),
+            "text":tomad,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
 
-        # ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
-        
+
+
+        photos=await bot.get_user_profile_photos(user_id=thisicket['userid'], limit=1)
+
+        if photos.total_count>0:
+            photofinal=photos.photos[0][0].file_id
+
+            mesid=await bot.send_photo(chat_id=channelid, caption=datamessagehere, photo=photofinal)   
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_photo(chat_id=channelid_partner, caption=datamessagehere, photo=photofinal)  
+                ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd } })
+            ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':'none', 'original_channel_partner':'none',}, '$addToSet': { 'extrafield': extradd } })
+
+        else:
+            mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)   
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_message(chat_id=channelid_partner, text=datamessagehere)
+                ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd } })
+            ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':'none', 'original_channel_partner':'none',}, '$addToSet': { 'extrafield': extradd } })
 
 
         if thisicket['operator']!='none':
@@ -1043,22 +1072,6 @@ async def end_support(message: types.Message):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @dp.callback_query_handler(state=SupportManage.onair, text='operator_end_inline_ticket')
 async def end_supportbysupport(call: CallbackQuery):
     thisicket=ticket_collection.find_one({"operator": call.from_user.id,"isopen": "onair"}) 
@@ -1078,32 +1091,7 @@ async def end_supportbysupport(call: CallbackQuery):
         ]) 
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
         await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
-    html_text="\n".join(
-        [
-            '👇 Следите за новыми запросами! 👇'
-        ]
-    )
-    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='📄 Входящие запросы',
-            callback_data='to_tickets'
-        )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
-    ])
-
-    if isadmin(call.from_user.id)== True:
-        supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-    if support_role_check(call.from_user.id)== "PLUS":
-        supportmenubase.add(InlineKeyboardButton(
-            text='🗄 Отчеты',
-            callback_data='to_csv_tables'
-        ))      
+    html_text,supportmenubase=build_support_menu(call.from_user.id) 
    
     await bot.send_photo(chat_id=call.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     await call.message.delete()
@@ -1137,64 +1125,61 @@ async def end_supportbysupport_error(call: CallbackQuery):
             clientnickname="@"+clientnickname
         datamessagehere = "\n".join(
             [
-                '<b>Обращение № '+str(counttickets)+'</b>',
-                thisicket['title'],
-                '',
+
+                '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
+                '<b>'+thisicket['title']+'</b>',
                 '🗣 '+clientnickname+' - '+clientcallmeas,
-                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
-                '',
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                '',
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
                 thisicket['ticketid'],
                 '',
-                thisicket["messagedata"],
-                '',
-                '=========================',
-                '',
-                "Диалог закрыт с ошибкой (клиент забанил бота) ",
+                '===',
+                "❌ Диалог закрыт с ошибкой:",
+                "клиент забанил бота.",
                 "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
-
+                
             ]
-        ) 
-        ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere}})
-        # if len(datamessagehere)>4000:
-        #     messageobj=safe_split_text(datamessagehere)
-        #     mesid=await bot.send_message(chat_id=channelid, text=messageobj[0])
-            
-        #     for mesitem in messageobj[1:]:
-        #         print(mesitem)
-        #         # await bot.send_message(chat_id=-1001164979016, text=mesitem, reply_to_message_id=mesid.message_id)
-            
-        # else:
-        mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+        )
+        tomad= "\n".join([
+            "Диалог закрыт с ошибкой (клиент забанил бота) ",
+            "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+        ])
+        extradd={
+            "side":"error",
+            "date": datetime.now(),
+            "text":tomad,
+            "from_id":call.from_user.id,
+            "message_from_id":call.message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
 
-        # ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
 
-    html_text="\n".join(
-        [
-            '👇 Следите за новыми запросами! 👇'
-        ]
-    )
-    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='📄 Входящие запросы',
-            callback_data='to_tickets'
-        )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
-    ])
+        photos=await bot.get_user_profile_photos(user_id=thisicket['userid'], limit=1)
 
-    if isadmin(call.from_user.id)== True:
-        supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-    if support_role_check(call.from_user.id)== "PLUS":
-        supportmenubase.add(InlineKeyboardButton(
-            text='🗄 Отчеты',
-            callback_data='to_csv_tables'
-        ))      
+        if photos.total_count>0:
+            photofinal=photos.photos[0][0].file_id
+
+            mesid=await bot.send_photo(chat_id=channelid, caption=datamessagehere, photo=photofinal)
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_photo(chat_id=channelid_partner, caption=datamessagehere, photo=photofinal)
+                ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd }})
+            ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd }})
+
+        else:
+            mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_message(chat_id=channelid_partner, text=datamessagehere)
+                ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd }})
+            ticket_collection.update({"ticketid": thisicket['ticketid'], "isopen": "onair"},{"$set":{"isopen":"botbanned","messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd }})
+
+        
+       
+
+    html_text,supportmenubase=build_support_menu(call.from_user.id)   
    
     await bot.send_photo(chat_id=call.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     await call.message.delete()
@@ -1227,20 +1212,16 @@ async def end_supportbysupport(message: types.Message):
 
         datamessagehere = "\n".join(
             [
-                '<b>Обращение № '+str(counttickets)+'</b>',
-                thisicket['title'],
-                '',
+                '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
+                '<b>'+thisicket['title']+'</b>',
                 '🗣 '+clientnickname+' - '+clientcallmeas,
-                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
-                '',
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
+                '',
+                '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
                 thisicket['ticketid'],
                 '',
-                thisicket["messagedata"],
-                '',
-                '=========================',
-                '',
-                "Диалог закрыт оператором ",
+                '===',
+                "👨‍💻 Закрыт оператором",
                 "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
 
             ]
@@ -1259,48 +1240,47 @@ async def end_supportbysupport(message: types.Message):
             )]
         ]) 
         
-# for item in a_list[1:] :
+
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
-        await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
-        mesid='none'
-        # if len(datamessagehere)>4000:
-        #     messageobj=safe_split_text(datamessagehere)
-        #     mesid=await bot.send_message(chat_id=channelid, text=messageobj[0])
-            
-        #     for mesitem in messageobj[1:]:
-        #         print(mesitem)
-        #         # await bot.send_message(chat_id=-1001164979016, text=mesitem, reply_to_message_id=mesid.message_id)
-            
-        # else:
-        mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+        await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)      
 
-        ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
-    html_text="\n".join(
-        [
-            '👇 Следите за новыми запросами! 👇'
-        ]
-    )
-    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='📄 Входящие запросы',
-            callback_data='to_tickets'
-        )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
-    ])
+        tomad= "\n".join([
+            "Диалог закрыт оператором ",
+            "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+        ])
+        extradd={
+            "side":"fromoperator" ,
+            "date": datetime.now(),
+            "text":tomad,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
 
-    if isadmin(message.from_user.id)== True:
-        supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-    if support_role_check(message.from_user.id)== "PLUS":
-        supportmenubase.add(InlineKeyboardButton(
-            text='🗄 Отчеты',
-            callback_data='to_csv_tables'
-        ))      
+
+        photos=await bot.get_user_profile_photos(user_id=thisicket['userid'], limit=1)
+
+        if photos.total_count>0:
+            photofinal=photos.photos[0][0].file_id
+
+            mesid=await bot.send_photo(chat_id=channelid, caption=datamessagehere, photo=photofinal)
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_photo(chat_id=channelid_partner, caption=datamessagehere, photo=photofinal)
+                ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'],'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            
+
+        else:
+            mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_message(chat_id=channelid_partner, text=datamessagehere)
+                ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'],'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            
+    html_text,supportmenubase=build_support_menu(message.from_user.id)    
     await bot.send_message(chat_id=message.from_user.id,text='Диалог завершен',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
     await bot.send_photo(chat_id=message.from_user.id,photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     
@@ -1391,41 +1371,17 @@ async def to_tickets_func(call:types.CallbackQuery):
     
     inlinekeyb.add(InlineKeyboardButton(text="↩️ в меню",callback_data='supportbacktomenu'))
     if created == 0 and paused == 0:
-        # await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('silent') )
+       
         await call.message.edit_media(media=InputMediaPhoto(media=photoparser("silent"), caption=html_text), reply_markup=inlinekeyb) 
     else:
-        # await bot.send_photo(chat_id=call.from_user.id, photo=photoparser('waiting'))
+  
         await call.message.edit_media(media=InputMediaPhoto(media=photoparser("waiting"), caption=html_text), reply_markup=inlinekeyb) 
-    # await call.message.edit_text(text=html_text, reply_markup=inlinekeyb)
+    
          
 
 @dp.callback_query_handler(text='supportbacktomenu', state=SupportManage.menu)
 async def supportbacktomenufunc(call:types.CallbackQuery):
-    html_text="\n".join(
-        [
-            '👇 Следите за новыми запросами! 👇'
-        ]
-    )
-    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='📄 Входящие запросы',
-            callback_data='to_tickets'
-        )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
-    ])
-    if isadmin(call.from_user.id)== True:
-        supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-    if support_role_check(call.from_user.id)== "PLUS":
-        supportmenubase.add(InlineKeyboardButton(
-            text='🗄 Отчеты',
-            callback_data='to_csv_tables'
-        )) 
+    html_text,supportmenubase=build_support_menu(call.from_user.id)
     await call.message.edit_media(media=InputMediaPhoto(media=photoparser("operatormainmenu"), caption=html_text), reply_markup=supportmenubase) 
 
 ############################################admin_menu###########################################
@@ -1438,7 +1394,7 @@ async def adminmenustart(call: types.CallbackQuery):
             'все администраторы.',
             '<b>⚜️ Возможности:</b>',
             '<i>· добавить/удалить оператора</i>',
-            '<i>· добавить/удалить город</i>',
+            # '<i>· добавить/удалить город</i>',
             '<i>· добавить материалы </i>'
         ]
     )
@@ -1447,10 +1403,10 @@ async def adminmenustart(call: types.CallbackQuery):
             text='🗣 Операторы',
             callback_data='edit_support'
         )],
-        [InlineKeyboardButton(
-            text='🌆 Города',
-            callback_data=show_cities_pages.new("showcities",page=1)
-        )],
+        # [InlineKeyboardButton(
+        #     text='🌆 Города',
+        #     callback_data=show_cities_pages.new("showcities",page=1)
+        # )],
         [InlineKeyboardButton(
             text='📚 Новичку',
             callback_data=knowledge_list_call.new("show_faq",param1="main", param2="none")
@@ -1466,179 +1422,6 @@ async def adminmenustart(call: types.CallbackQuery):
 
 
 
-###########################################Admin menu - cities manage################################################################
-@dp.callback_query_handler(show_cities_pages.filter(command='showcities'), state=SupportManage.menu)
-async def show_cities_func(call: types.CallbackQuery, callback_data:dict):
-    page = callback_data.get("page")
-    page = int(page)
-    prevpage = page - 1
-    nextpage = page + 1
-    inlinekeys = InlineKeyboardMarkup(row_width=2)
-    x=settings_collection.find_one({"settings":"mainsettings"})
-    cities_obj=x["current_cities"]
-    cities_on_page = cities_obj[((page-1)*5):(5*page)]
-
-    for y in cities_on_page:
-        inlinekeys.add(InlineKeyboardButton(text=y['city']+' - '+y['code'], callback_data=show_cities_pages.new("askfordeletecity",page=y['code'])))
-
-
-    
-    
-    if prevpage < 1:
-        prevtoadd=InlineKeyboardButton(
-            text='◀️',
-            callback_data=show_cities_pages.new("showcities",page=1)
-        )
-    else:
-        prevtoadd=InlineKeyboardButton(
-            text='◀️',
-            callback_data=show_cities_pages.new("showcities",page=prevpage)
-        )
-
-    if  math.ceil(len(cities_obj)/5)==page:
-        nexttoadd=InlineKeyboardButton(
-            text='▶️',
-            callback_data=show_cities_pages.new("showcities",page=page)
-        )      
-    else:
-        nexttoadd=InlineKeyboardButton(
-            text='▶️',
-            callback_data=show_cities_pages.new("showcities",page=nextpage)
-        )  
-    inlinekeys.add(prevtoadd,nexttoadd)
-    inlinekeys.add(InlineKeyboardButton(text='Добавить город в список',callback_data='add_city_admin'))
-    inlinekeys.add(InlineKeyboardButton(text='Назад в админ-меню',callback_data='to_admin_menu'))
-    # await call.message.edit_text(text='Вы на странице '+'<b>'+str(page)+'</b>', reply_markup=inlinekeys)
-    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("citieslist"), caption='Вы на странице '+'<b>'+str(page)+'</b>'), reply_markup=inlinekeys) 
-
-@dp.callback_query_handler(show_cities_pages.filter(command='askfordeletecity'), state=SupportManage.menu)
-async def ask_for_delete_city_func(call: types.CallbackQuery, callback_data:dict):
-    
-    html_text="\n".join(
-        [
-            ' ',
-        ]
-    )
-    inlinekeys = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='❌ Да, удалить',
-            callback_data=show_support_pages.new('deletecity',page=callback_data.get("page"))
-        )],
-        [InlineKeyboardButton(
-            text='◀️ Нет, оставить',
-            callback_data=show_support_pages.new("showcities",page=1)
-        )],
-    ])
-    # await call.message.edit_text(text=html_text,parse_mode='HTML', reply_markup=inlinekeys)
-    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("deletetagask"), caption=html_text), reply_markup=inlinekeys) 
-
-
-@dp.callback_query_handler(show_cities_pages.filter(command='deletecity'), state=SupportManage.menu)
-async def deleting_city_func(call: types.CallbackQuery, callback_data:dict):
-    if callback_data.get("page")!= "GLBL" and callback_data.get("page")!= "OTHER":
-        staff_collection.find_and_modify( 
-            query={}, 
-            update={ "$pull": { 'city_code': callback_data.get("page") }}
-            )
-        settings_collection.find_and_modify( 
-            query={"settings":"mainsettings"}, 
-            update={ "$pull": { 'current_cities':{'code': callback_data.get("page")} }}
-            )
-        user_collection.find_and_modify( 
-            query={}, 
-            update={ "citytag": "GLBL"}
-            )
-    
-    page = 1
-    prevpage = page - 1
-    nextpage = page + 1
-    inlinekeys = InlineKeyboardMarkup(row_width=2)
-    x=settings_collection.find_one({"settings":"mainsettings"})
-    cities_obj=x["current_cities"]
-    cities_on_page = cities_obj[((page-1)*5):(5*page)]
-
-    for y in cities_on_page:
-        inlinekeys.add(InlineKeyboardButton(text=y['city']+' - '+y['code'], callback_data=show_cities_pages.new("askfordeletecity",page=y['code'])))
-
-
-    
-    
-    if prevpage < 1:
-        prevtoadd=InlineKeyboardButton(
-            text='◀️',
-            callback_data=show_cities_pages.new("showcities",page=1)
-        )
-    else:
-        prevtoadd=InlineKeyboardButton(
-            text='◀️',
-            callback_data=show_cities_pages.new("showcities",page=prevpage)
-        )
-
-    if  math.ceil(len(cities_obj)/5)==page:
-        nexttoadd=InlineKeyboardButton(
-            text='▶️',
-            callback_data=show_cities_pages.new("showcities",page=page)
-        )      
-    else:
-        nexttoadd=InlineKeyboardButton(
-            text='▶️',
-            callback_data=show_cities_pages.new("showcities",page=nextpage)
-        )  
-    inlinekeys.add(prevtoadd,nexttoadd)
-    inlinekeys.add(InlineKeyboardButton(text='Добавить город в список',callback_data='add_city_admin'))
-    inlinekeys.add(InlineKeyboardButton(text='Назад в админ-меню',callback_data='to_admin_menu'))
-    # await call.message.edit_text(text='Вы на странице '+'<b>'+str(page)+'</b>', reply_markup=inlinekeys)
-    await call.message.edit_media(media=InputMediaPhoto(media=photoparser("citieslist"), caption='Вы на странице '+'<b>'+str(page)+'</b>'), reply_markup=inlinekeys) 
-
-
-@dp.callback_query_handler(text='add_city_admin', state=SupportManage.menu)
-async def add_city_admin_init(call: types.CallbackQuery):
-    html_text="\n".join(
-        [
-            'Введите название города и его тег в следующем формате:',
-            ' ',
-            '<b>Город/тег</b>',
-            'Тег обязан быть написан латиницей большими буквами'
-        ]
-    )
-    await SupportManage.addcityinput.set()
-    # await call.message.edit_text(text=html_text, reply_markup=None)
-    await call.message.edit_media(media=InputMediaPhoto( photoparser('citieslist'),caption=html_text), reply_markup=None)
-@dp.message_handler( state=SupportManage.addcityinput)
-async def adding_city_admin(message: types.Message):
-    thismsg=message.text
-    thismsg = thismsg.split('/')
-    city = thismsg[0]
-    code = thismsg[1].upper()
-    x=settings_collection.find_one({"settings":"mainsettings"})
-    cities_obj=x["current_cities"]
-    cities_list=[]
-
-    for y in cities_obj:
-        cities_list.append(y["code"])
-    
-    if code in cities_list:
-        print('Такой тег уже зарегестрирован в системе, попробуйте опять')
-    else:
-        html_text="\n".join(
-            [
-                'Вы добавили город'
-            ]
-        )    
-        newObject = {"city":city,"code":code}
-        settings_collection.find_and_modify( 
-            query={"settings":"mainsettings"}, 
-            update={ "$push": { 'current_cities': newObject}}
-            )
-        staff_collection.find_and_modify( 
-            query={"$or":[{'staffrole':'admin'},{'staffrole':'owner'}]}, 
-            update={ "$push": { 'city_code': code}}
-            )
-        await SupportManage.menu.set()
-        inlinekeys = InlineKeyboardMarkup(row_width=2)
-        inlinekeys.add(InlineKeyboardButton(text='Назад в админ-меню',callback_data=show_cities_pages.new("showcities",page=1)))
-        # await message.answer(text=html_text, reply_markup=inlinekeys)
-        await message.answer_photo(photo=photoparser('citieslist'),caption=html_text, reply_markup=inlinekeys)
 
 ################################################Admin menu - support manage#########################################################
 @dp.callback_query_handler(text='edit_support', state=SupportManage.menu)
@@ -1721,7 +1504,7 @@ async def system_operator_open_func(call: types.CallbackQuery, callback_data:dic
             '🗣 Имя оператора: <a href="tg://user?id='+str(x['user_id'])+'">'+x["first_name"]+'</a>',
             '✏️ Имя для клиентов: '+x['callmeas'],
             '🔑 Права: '+str(support_role_check(x['user_id'])),
-            '🌆 Города: '+str(x["city_code"][1:])
+            '🌆 Партнеры: '+str(x["city_code"][1:])
         ]
     )
     operatorbuttons = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
@@ -1738,16 +1521,22 @@ async def system_operator_open_func(call: types.CallbackQuery, callback_data:dic
             callback_data=show_support_pages.new("changepassoperator",page=x["user_id"])
         )],
         [InlineKeyboardButton(
+            text='🖼️ Изменить фотографию',
+            callback_data=show_support_pages.new("ch_ph_oper",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
             text='❌ Удалить',
             callback_data=show_support_pages.new("deleteoperatorinit",page=x["user_id"])
         )],
         [InlineKeyboardButton(
-            text='↩️ к списку операторов',
+            text='◀️ к списку операторов',
             callback_data=show_support_pages.new("showsuppages",page=1)
         )]
     ])
-    # await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=operatorbuttons)  
-    await call.message.edit_media(media=InputMediaPhoto(photoparser('nameroletags'), caption=html_text, parse_mode='HTML'), reply_markup=operatorbuttons)
+    phav=x['photo_avatar']
+    if phav=='none':
+        phav=photoparser('nameroletags')
+    await call.message.edit_media(media=InputMediaPhoto(phav, caption=html_text, parse_mode='HTML'), reply_markup=operatorbuttons)
 
 
 @dp.callback_query_handler(show_support_pages.filter(command='deleteoperatorinit'), state=SupportManage.menu)
@@ -1769,7 +1558,7 @@ async def delete_operator_init(call: types.CallbackQuery, callback_data:dict):
             callback_data=show_support_pages.new("openoperator",page=x["user_id"])
         )]
     ])
-    # await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=operatorbuttons) 
+
     await call.message.edit_media(media=InputMediaPhoto(photoparser('deleteoperatorask'), caption=html_text), reply_markup=operatorbuttons)
 
 
@@ -1777,7 +1566,12 @@ async def delete_operator_init(call: types.CallbackQuery, callback_data:dict):
 async def delete_operator_done(call: types.CallbackQuery, callback_data:dict):
     await call.answer(cache_time=1)
     staff_collection.remove({"user_id" : int(callback_data.get("page"))}) 
-    states_collection.remove({"user": int(callback_data.get("page"))})
+
+    states_collection.find_one_and_update(
+        { "user":int(callback_data.get("page")) },
+        {"$set":{ "state":'ProjectManage:menu' }}
+    )
+
     html_text="\n".join(
         [
             ' '
@@ -1789,7 +1583,7 @@ async def delete_operator_done(call: types.CallbackQuery, callback_data:dict):
             callback_data=show_support_pages.new('showsuppages',page=1)
         )],
     ])
-    # await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=operatorbuttons)
+
     await call.message.edit_media(media=InputMediaPhoto(photoparser('deleteoperatorask'), caption=html_text), reply_markup=operatorbuttons)
 
 
@@ -1817,7 +1611,7 @@ async def system_change_role(call: types.CallbackQuery, callback_data:dict):
             '🗣 Имя оператора: <a href="tg://user?id='+str(x['user_id'])+'">'+x["first_name"]+'</a>',
             '✏️ Имя для клиентов: '+x['callmeas'],
             '🔑 Права: '+str(support_role_check(x['user_id'])),
-            '🌆 Города: '+str(x["city_code"][1:])
+            '🌆 Партнеры: '+str(x["city_code"][1:])
         ]
     )
     operatorbuttons = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
@@ -1834,6 +1628,10 @@ async def system_change_role(call: types.CallbackQuery, callback_data:dict):
             callback_data=show_support_pages.new("changepassoperator",page=x["user_id"])
         )],
         [InlineKeyboardButton(
+            text='🖼️ Изменить фотографию',
+            callback_data=show_support_pages.new("ch_ph_oper",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
             text='❌ Удалить',
             callback_data=show_support_pages.new("deleteoperatorinit",page=x["user_id"])
         )],
@@ -1842,8 +1640,137 @@ async def system_change_role(call: types.CallbackQuery, callback_data:dict):
             callback_data=show_support_pages.new("showsuppages",page=1)
         )]
     ])
-    # await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=operatorbuttons) 
-    await call.message.edit_media(media=InputMediaPhoto(photoparser('nameroletags'), caption=html_text), reply_markup=operatorbuttons)
+    phav=x['photo_avatar']
+    if phav=='none':
+        phav=photoparser('nameroletags')
+    await call.message.edit_media(media=InputMediaPhoto(phav, caption=html_text, parse_mode='HTML'), reply_markup=operatorbuttons)
+
+
+
+#======Operator_change_photo
+
+@dp.callback_query_handler(show_support_pages.filter(command='ch_ph_oper'), state=SupportManage.menu)
+async def system_operator_photochange_func(call: types.CallbackQuery, callback_data:dict, state: FSMContext): 
+    await call.answer(cache_time=1)
+    html_text="\n".join(
+        [
+            'Пришлите новое фото оператора.'
+        ]
+    )
+    operatorbuttons = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='◀️ Отменить и вернуться',
+            callback_data=show_support_pages.new('op_ch_ph_canc',page=int(callback_data.get("page")))
+        )]
+    ])
+
+    await SupportManage.changeoperatorphoto.set()
+    await state.update_data(operph=int(callback_data.get("page")))
+    await call.message.edit_media(media=InputMediaPhoto(photoparser('operatormainmenu'), caption=html_text, parse_mode='HTML'), reply_markup=operatorbuttons)
+
+
+@dp.callback_query_handler(show_support_pages.filter(command='op_ch_ph_canc'), state=SupportManage.changeoperatorphoto)
+async def system_operator_photochange_canc_func(call: types.CallbackQuery, callback_data:dict, state: FSMContext): 
+    x = staff_collection.find_one({"user_id" : int(callback_data.get("page"))})
+
+
+    
+    html_text="\n".join(
+        [
+            '🗣 Имя оператора: <a href="tg://user?id='+str(x['user_id'])+'">'+x["first_name"]+'</a>',
+            '✏️ Имя для клиентов: '+x['callmeas'],
+            '🔑 Права: '+str(support_role_check(x['user_id'])),
+            '🌆 Партнеры: '+str(x["city_code"][1:])
+        ]
+    )
+    operatorbuttons = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='🗣 Изменить имя',
+            callback_data=show_support_pages.new('operator_change_name',page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='🌆 Тэги городов',
+            callback_data=show_support_pages.new("changecityoperator",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='🔑 Права: '+str(support_role_check(x['user_id'])),
+            callback_data=show_support_pages.new("changepassoperator",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='🖼️ Изменить фотографию',
+            callback_data=show_support_pages.new("ch_ph_oper",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='❌ Удалить',
+            callback_data=show_support_pages.new("deleteoperatorinit",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='◀️ к списку операторов',
+            callback_data=show_support_pages.new("showsuppages",page=1)
+        )]
+    ])
+    phav=x['photo_avatar']
+    if phav=='none':
+        phav=photoparser('nameroletags')
+    await SupportManage.menu.set()
+    await call.message.edit_media(media=InputMediaPhoto(phav, caption=html_text, parse_mode='HTML'), reply_markup=operatorbuttons)
+
+
+@dp.message_handler(content_types=['photo'],state=SupportManage.changeoperatorphoto)
+async def system_operator_photoget_func(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    operatorid = data.get("operph")
+    thisphoto=message.photo[0].file_id
+
+    staff_collection.find_one_and_update(
+        { "user_id":operatorid },
+        {"$set":{ "photo_avatar":thisphoto }}
+    )
+
+    x = staff_collection.find_one({"user_id" : operatorid})
+
+
+    
+    html_text="\n".join(
+        [
+            '🗣 Имя оператора: <a href="tg://user?id='+str(x['user_id'])+'">'+x["first_name"]+'</a>',
+            '✏️ Имя для клиентов: '+x['callmeas'],
+            '🔑 Права: '+str(support_role_check(x['user_id'])),
+            '🌆 Партнеры: '+str(x["city_code"][1:])
+        ]
+    )
+    operatorbuttons = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [InlineKeyboardButton(
+            text='🗣 Изменить имя',
+            callback_data=show_support_pages.new('operator_change_name',page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='🌆 Тэги городов',
+            callback_data=show_support_pages.new("changecityoperator",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='🔑 Права: '+str(support_role_check(x['user_id'])),
+            callback_data=show_support_pages.new("changepassoperator",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='🖼️ Изменить фотографию',
+            callback_data=show_support_pages.new("ch_ph_oper",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='❌ Удалить',
+            callback_data=show_support_pages.new("deleteoperatorinit",page=x["user_id"])
+        )],
+        [InlineKeyboardButton(
+            text='◀️ к списку операторов',
+            callback_data=show_support_pages.new("showsuppages",page=1)
+        )]
+    ])
+    phav=x['photo_avatar']
+    if phav=='none':
+        phav=photoparser('nameroletags')
+    await SupportManage.menu.set()
+    # await message.answer_photo(photo=InputMediaPhoto(phav, caption=html_text, parse_mode='HTML'), reply_markup=operatorbuttons)
+    await message.answer_photo(photo=phav, caption=html_text, reply_markup=operatorbuttons, parse_mode='HTML')
 
 
 
@@ -1851,6 +1778,7 @@ async def system_change_role(call: types.CallbackQuery, callback_data:dict):
 
 
 
+#======Operator_change_photo_end
 
 
 
@@ -1858,31 +1786,28 @@ async def system_change_role(call: types.CallbackQuery, callback_data:dict):
 
 
 
-
+#=======Operator_change_cities_array
 
 @dp.callback_query_handler(show_support_pages.filter(command='changecityoperator'), state=SupportManage.menu)
 async def system_operator_city_change_func(call: types.CallbackQuery, callback_data:dict):
     x = staff_collection.find_one({"user_id" : int(callback_data.get("page"))})
-    y = settings_collection.find_one({"settings":"mainsettings"})
     inlinekeys = InlineKeyboardMarkup(row_width=2)
-    cities_in_sys=y["current_cities"]
     cities = x["city_code"]
+    
+    cities_in_sys = partner_collection.find({})
     for i in cities_in_sys:
-
         galka=""
         deleteoradd="1"
-        if i['code'] in cities:
+        if i['system_tag'] in cities:
             galka="✔️"
             deleteoradd="0"
-        inlinekeys.add(InlineKeyboardButton(text=galka+i["city"]+' : '+i["code"], callback_data=edit_something_admin.new('ecu',i["code"],deleteoradd,int(callback_data.get("page")) )))
+        inlinekeys.add(InlineKeyboardButton(text=galka+i["city_name"]+' : '+i["system_tag"], callback_data=edit_something_admin.new('ecu',i["system_tag"],deleteoradd,int(callback_data.get("page")) )))
     inlinekeys.add(InlineKeyboardButton(text='Назад к оператору',callback_data=show_support_pages.new("openoperator",page=int(callback_data.get("page")))))
-    # await call.message.edit_text(text='Измените города', parse_mode='HTML', reply_markup=inlinekeys)  
     await call.message.edit_media(media=InputMediaPhoto(photoparser('operatorcitiesaccess'), caption=' '), reply_markup=inlinekeys)
 
 @dp.callback_query_handler(edit_something_admin.filter(command='ecu'), state=SupportManage.menu)
 async def system_operator_city_change_and_update_func(call: types.CallbackQuery, callback_data:dict):
     await call.answer(cache_time=1)
-
     if callback_data.get("deleteoradd") == "1":
         
         staff_collection.find_and_modify( 
@@ -1895,30 +1820,24 @@ async def system_operator_city_change_and_update_func(call: types.CallbackQuery,
             query={"user_id":int(callback_data.get("userid"))}, 
             update={ "$pull": { 'city_code': callback_data.get("something") }}
             )
-
-
     x = staff_collection.find_one({"user_id" : int(callback_data.get("userid"))})
-    y = settings_collection.find_one({"settings":"mainsettings"})
     inlinekeys = InlineKeyboardMarkup(row_width=2)
-    cities_in_sys=y["current_cities"]
     cities = x["city_code"]
+    
+    cities_in_sys = partner_collection.find({})
+
     for i in cities_in_sys:
         galka=""
         deleteoradd="1"
-        if i['code'] in cities:
+        if i['system_tag'] in cities:
             galka="✔️"
             deleteoradd="0"
-        inlinekeys.add(InlineKeyboardButton(text=galka+i["city"]+' : '+i["code"], callback_data=edit_something_admin.new('ecu',i["code"],deleteoradd,int(callback_data.get("userid")) )))
+        inlinekeys.add(InlineKeyboardButton(text=galka+i["city_name"]+' : '+i["system_tag"], callback_data=edit_something_admin.new('ecu',i["system_tag"],deleteoradd,int(callback_data.get("userid")) )))
     inlinekeys.add(InlineKeyboardButton(text='Назад к оператору',callback_data=show_support_pages.new("openoperator",page=int(callback_data.get("userid")))))
-    # await call.message.edit_text(text='Измените города', parse_mode='HTML', reply_markup=inlinekeys)  
+
     await call.message.edit_media(media=InputMediaPhoto(photoparser('operatorcitiesaccess'), caption=' '), reply_markup=inlinekeys)
 
-
-
-
-
-
-
+#=======Operator_change_cities_array_end
 
 
 
@@ -1957,7 +1876,7 @@ async def initialize_adding_operator_tosys(query: types.InlineQuery):
             results=[],
             switch_pm_text='Вы не являетесь админом бота',
             cache_time=0
-            # Тут ошибка
+           
         )
         return  
     supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
@@ -1970,37 +1889,60 @@ async def initialize_adding_operator_tosys(query: types.InlineQuery):
         results=[
             types.InlineQueryResultArticle(
                 id="1",
-                title='Сделать этот контакт оператором (проверьте)',
-                input_message_content=types.InputMessageContent(message_text="Вам предлагают стать оператором в компании КриптоКонсалтинг, нажмите на кнопку ниже, перейдите в бота и напишите что-нибудь."),
+                title='Сделать этот контакт оператором',
+                input_message_content=types.InputMessageContent(message_text="Вам предлагают стать оператором в компании КриптоКонсалтинг, пожалуйста, подтвердите свое согласие."),
                 reply_markup=supportmenubase
             )
         ],
         cache_time=0
     )  
 
-@dp.inline_handler(text="invite", state=ProjectManage)
+@dp.inline_handler(text="invite", state='*')
 async def generate_agent_button(query: types.InlineQuery):
-    this_agent=pmessages_collection.find_one({'tag_name':'agent_'+str(query.from_user.id)})
-    if this_agent!=None:
 
-        supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-            [InlineKeyboardButton(
-                text='Перейти в бота',
-                url='https://t.me/cryptoconsbot?start=agent_'+str(query.from_user.id)
-            )]
-        ])
-        await query.answer(
-            results=[
-                types.InlineQueryResultArticle(
-                    id="1",
-                    title='Пригласить в бота',
+
+    this_agent=staff_collection.find_one({'user_id':query.from_user.id})
+    this_agent_partners=links_collection.find({'citycode': {'$in': this_agent['city_code'][1:]}, 'additional':'default'})
+    results_arr=[]
+    i=1
+    if this_agent!=None and this_agent_partners!=None:
+        for x in this_agent_partners: 
+            supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+                [InlineKeyboardButton(
+                    text='Перейти в бота',
+                    url='https://t.me/cryptoconsbot?start='+x['uniquename']
+                )]
+            ])
+            toadd=types.InlineQueryResultArticle(
+                    id=i,
+                    title=x['uniquename'],
+                    description=x['citycode']+'-'+x['city'],
                     input_message_content=types.InputMessageContent(message_text="<b>💎 ООО «Крипто Консалтинг»</b> — \nпроводник в мир криптовалют", parse_mode='HTML'),
                     reply_markup=supportmenubase,
                     
                 )
-            ],
+            results_arr.append(toadd)
+            i=i+1
+
+
+        await query.answer(
+            results=results_arr,
             cache_time=0
         )
+
+
+
+#-------------------------------------инлайн ответы---------------------------
+
+
+@dp.inline_handler(state='*')
+async def show_inline_materials(query: types.InlineQuery):
+    
+
+
+
+#-------------------------------------инлайн ответы конец---------------------------
+
 
 
 # ----------------здесь инлайн функции конец-----------------------
@@ -2019,7 +1961,8 @@ async def providing_adding_operator_tosys(call:types.CallbackQuery, callback_dat
         "city_code":['none'],
         "callmeas":'none',
         "role":callback_data.get("operator_role"),
-        'photo_avatar':'none'})
+        'photo_avatar':'none',
+        'isreverse':False})
         html_text="\n".join(
             [
                 'Вы успешно зарегистрированы в системе как оператор!',
@@ -2075,11 +2018,10 @@ async def showcard(call:types.CallbackQuery, callback_data:dict):
         photofinal=thisuser['user_photo']
     
     await call.message.edit_media(media=InputMediaPhoto(media=photofinal, caption=html_text), reply_markup=inlinekeyb)
-    # await call.message.edit_text(text=html_text, reply_markup=inlinekeyb)
+
 
 @dp.callback_query_handler(ticket_callback.filter(command='jumptoclient'), state=SupportManage.menu)
 async def jumptothis(call:types.CallbackQuery, callback_data:dict):
-    # await call.answer(cache_time=10)
     thisicket=ticket_collection.find_one({"ticketid":callback_data.get("ticketid")})
     thisoperator = staff_collection.find_one({"user_id":call.from_user.id})
     thisuser = user_collection.find_one({"user_id":thisicket['userid']})
@@ -2089,22 +2031,25 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
             ' ',
             '<b>🗣️ '+thisuser['callmeas']+'</b> ',
             '<b>Обращение: </b>'+thisicket['title'],
-            ' ',
-            'Сообщения в ваше отсутствие: ',
-            # thisicket['messagedata_operator']
         ]
     )
-    datamessagehere = "\n".join(
-        [
-            thisicket["messagedata"],
-            '',
-            thisicket["messagedata_timed"],
-            '',
-            "Оператор подключился <i>("+datetime.now().strftime("%d.%m.%Y / %H:%M")+")</i>"
 
-        ]
-    ) 
-    
+    tomsas="\n".join(
+            [
+                "Оператор подключился <i>("+datetime.now().strftime("%d.%m.%Y / %H:%M")+")</i>"
+            ]
+        )
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":call.from_user.id,
+        "message_from_id":call.message.message_id,
+        "type":"text",
+        "mediaid":"none",
+        "isread":True}
+
+
     if thisicket["isopen"]=="created":
         if thisoperator['photo_avatar']!='none':
             try:
@@ -2157,13 +2102,39 @@ async def jumptothis(call:types.CallbackQuery, callback_data:dict):
     #чееее
     await call.message.delete()
     
+    
     await bot.send_photo(chat_id=call.from_user.id,caption=html_text,parse_mode='HTML', reply_markup=operatorcontrol,photo=photoparser('changed'))
-    if len(thisicket['messagedata_operator'])>0:
-        await bot.send_message(chat_id=call.from_user.id, text=thisicket['messagedata_operator'])
-    ticket_collection.find_and_modify(
-        query={"ticketid":callback_data.get("ticketid"), "$or":[{'isopen':'created'},{'isopen':'onpause'}]},
-        update={"$set":{"isopen":"onair","operator":call.from_user.id, "messagedata_timed":"", "messagedata": datamessagehere, 'messagedata_operator': ''}}
+    
+    
+    msgs=ticket_collection.find_one({"ticketid":callback_data.get("ticketid"),"$or":[{'isopen':'created'},{'isopen':'onpause'}]})
+    lostmsgs=msgs['extrafield']
+    for lm in lostmsgs:
+        if lm['isread']==False:
+
+
+            if lm['type']=='voice':
+                await bot.send_voice(chat_id=call.from_user.id, voice=lm['mediaid'])
+            elif lm['type']=='photo':
+                await bot.send_photo(chat_id=call.from_user.id, photo=lm['mediaid'], caption=lm['text'])
+            elif lm['type']=='video':
+                await bot.send_video(chat_id=call.from_user.id, video=lm['mediaid'], caption=lm['text'])
+            elif lm['type']=='video_note':
+                await bot.send_video_note(chat_id=call.from_user.id, video_note=lm['mediaid'])
+            elif lm['type']=='document':
+                await bot.send_document(chat_id=call.from_user.id, document=lm['mediaid'], caption=lm['text'])
+            else:
+                await bot.send_message(chat_id=call.from_user.id, text=lm['text'], parse_mode='HTML')
+            
+
+    ticket_collection.find_one_and_update(
+        filter={"ticketid":callback_data.get("ticketid"), "$or":[{'isopen':'created'},{'isopen':'onpause'}]},
+        update={"$set":{"extrafield.$[].isread": True}  }
     )
+    ticket_collection.find_one_and_update(
+        filter={"ticketid":callback_data.get("ticketid"), "$or":[{'isopen':'created'},{'isopen':'onpause'}]},
+        update={"$set":{"isopen":"onair","operator":call.from_user.id,},'$addToSet': { 'extrafield': extradd }  }
+    )
+    
     await SupportManage.onair.set()
     await call.answer(cache_time=0)
 
@@ -2174,36 +2145,22 @@ async def changeticket_supportbysupport(message: types.Message):
             "Оператор приостановил диалог <i>("+datetime.now().strftime("%d.%m.%Y / %H:%M")+")</i>"
         ]
     ) 
+    extradd={
+            "side":"fromoperator" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
     ticket_collection.find_and_modify(
         query={"operator": message.from_user.id, "isopen":"onair"},
-        update={"$set":{"isopen":"onpause", "messagedata_timed":datamessagehere}}
+        update={"$set":{"isopen":"onpause"},'$addToSet': { 'extrafield': extradd }}
     )
-    html_text="\n".join(
-        [
-            ' '
-        ]
-    )
-    supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-        [InlineKeyboardButton(
-            text='📄 Входящие запросы',
-            callback_data='to_tickets'
-        )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
-    ])
-    if isadmin(message.from_user.id)== True:
-        supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-    if support_role_check(message.from_user.id)== "PLUS":
-        supportmenubase.add(InlineKeyboardButton(
-            text='🗄 Отчеты',
-            callback_data='to_csv_tables'
-        )) 
-    # await message.answer(text='Вы поставили вопрос на паузу - не заставляйте клиента ждать!',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
+    html_text,supportmenubase=build_support_menu(message.from_user.id)
+
     await message.answer_photo(caption='Вы поставили обращение на паузу - не заставляйте клиента ждать!',parse_mode='HTML',reply_markup=ReplyKeyboardRemove(), photo=photoparser('paused') )
     await message.answer_photo(photo=photoparser('operatormainmenu'), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase ) 
     await SupportManage.menu.set()
@@ -2226,14 +2183,22 @@ async def currenttalk(message: types.Message):
     except:
         datamessagehere="\n".join(
             [
-                thisicket["messagedata"],
-                '',
                 '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
             ]
         )
+        extradd={
+            "side":"error" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
         ticket_collection.find_and_modify(
             query={"ticketid":thisicket["ticketid"]},
-            update={"$set":{"messagedata":datamessagehere}}
+            update={'$addToSet': { 'extrafield': extradd }}
         )
         html_text2="\n".join(
             [
@@ -2253,18 +2218,28 @@ async def currenttalk(message: types.Message):
 
         #проверка на билет
         raise CancelHandler()       
-    datamessagehere = "\n".join(
-        [
-            thisicket["messagedata"],
-            '',
-            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
-            message.text
-        ]
-    )
+
     
+    tomsas="\n".join(
+            [
+                '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.text
+            ]
+        )
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"text",
+        "mediaid":"none",
+        "isread":True}
+
+
     ticket_collection.find_and_modify(
         query={"ticketid":thisicket["ticketid"]},
-        update={"$set":{"messagedata":datamessagehere}}
+        update={'$addToSet': { 'extrafield': extradd }}
     )
 @dp.message_handler(state=ProjectManage.awaitingsup)
 async def usercurrenttalk(message: types.Message, state: FSMContext):
@@ -2278,71 +2253,660 @@ async def usercurrenttalk(message: types.Message, state: FSMContext):
             ]
         ) 
         await bot.send_message(chat_id=thisicket['operator'],text=html_text,parse_mode='HTML')
-        await bot.send_chat_action(chat_id=thisicket['operator'],action="typing")
-        datamessagehere = "\n".join(
+        tomsas="\n".join(
             [
-                thisicket["messagedata"],
-                '',
                 '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
                 message.text
             ]
         )
-        
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
         ticket_collection.find_and_modify(
             query={"ticketid":thisicket["ticketid"]},
-            update={"$set":{"messagedata":datamessagehere}}
+            update={'$addToSet': { 'extrafield': extradd }}
         )
-    elif thisicket["isopen"]=="onpause":
-        html_text="\n".join(
+    elif thisicket["isopen"]=="onpause" or thisicket["isopen"]=="created":
+        tomsas="\n".join(
             [
-                '<b>🗣️ '+thisuser["callmeas"]+':</b>',
-                message.text
-            ]
-        )
-        datamessagehere = "\n".join(
-            [
-                thisicket["messagedata_timed"],
-                '',
                 '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
                 message.text
             ]
         )
-        operatormessage = "\n".join(
-            [
-                thisicket["messagedata_operator"],
-                message.text
-            ]
-        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":False}
+
         ticket_collection.find_and_modify(
             query={"ticketid":thisicket["ticketid"]},
-            update={"$set":{"messagedata_timed":datamessagehere, 'messagedata_operator':operatormessage}}
-        )  
-    elif thisicket["isopen"]=="created":
-        html_text="\n".join(
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+  
+
+
+
+###################################БЛОК ОТПРАВКИ ГОЛОСОВЫХ########################################################
+
+@dp.message_handler( content_types=['voice'], state=SupportManage.onair)
+async def currenttalk_voice(message: types.Message):
+    thisoperator =  staff_collection.find_one({"user_id":message.from_user.id})
+    tomsas="\n".join(
+        [
+            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+        ]
+    )
+    thisicket=ticket_collection.find_one({"operator":message.from_user.id, "isopen":"onair"})
+    try:
+        await bot.send_voice(chat_id=thisicket['userid'], voice=message.voice.file_id)
+    except:
+        datamessagehere="\n".join(
             [
-                '<b>🗣️ '+thisuser["callmeas"]+':</b>',
-                message.text
+                '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
             ]
         )
-        datamessagehere = "\n".join(
+        extradd={
+            "side":"error" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+        html_text2="\n".join(
             [
-                thisicket["messagedata_timed"],
+                '<b>🤖 Бот КриптоКонсалтинг:</b>',
                 '',
-                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
-                message.text
+                'Клиент завершил диалог, нажмите на ❌ Завершить'
             ]
         )
-        operatormessage = "\n".join(
+        endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='❌ Завершить',
+                callback_data='operator_end_inline_ticket_error'
+            )]
+        ]) 
+        await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+
+        #проверка на билет
+        raise CancelHandler()       
+
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"voice",
+        "mediaid":message.voice.file_id,
+        "isread":True}
+
+    ticket_collection.find_and_modify(
+        query={"ticketid":thisicket["ticketid"]},
+        update={'$addToSet': { 'extrafield': extradd }}
+    )
+
+@dp.message_handler(content_types=['voice'],state=ProjectManage.awaitingsup)
+async def usercurrenttalk_voice(message: types.Message, state: FSMContext):
+
+
+    thisicket=ticket_collection.find_one({"userid":message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'},{'isopen':'created'}]})
+    thisuser = user_collection.find_one({"user_id":message.from_user.id})
+    if thisicket["isopen"]=="onair":
+    
+        await bot.send_voice(chat_id=thisicket['operator'], voice=message.voice.file_id)
+        tomsas="\n".join(
             [
-                thisicket["messagedata_operator"],
-                message.text
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
             ]
         )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"voice",
+            "mediaid":message.voice.file_id,
+            "isread":True}
+
         ticket_collection.find_and_modify(
             query={"ticketid":thisicket["ticketid"]},
-            update={"$set":{"messagedata_timed":datamessagehere, "messagedata_operator":operatormessage}}
-        )     
-@dp.message_handler(state=ProjectManage.preparingquest)
-async def usercantresolve(message: types.Message):
-    await message.answer(text='Пожалуйста, выберите категорию обращения выше',parse_mode='HTML',reply_markup=userendsupport)
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+    elif thisicket["isopen"]=="onpause" or thisicket["isopen"]=="created":
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"voice",
+            "mediaid":message.voice.file_id,
+            "isread":False}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+
+
+###################################БЛОК ОТПРАВКИ фоточчек########################################################
+
+@dp.message_handler( content_types=['photo'], state=SupportManage.onair)
+async def currenttalk_photo(message: types.Message):
+
+    thisoperator =  staff_collection.find_one({"user_id":message.from_user.id})
+    if message.caption==None:
+        message.caption=''
+    tomsas="\n".join(
+        [
+            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            message.caption
+        ]
+    )
+    thisicket=ticket_collection.find_one({"operator":message.from_user.id, "isopen":"onair"})
+    try:
+        # await bot.send_voice(chat_id=thisicket['userid'], voice=message.voice.file_id)
+       
+        await bot.send_photo(chat_id=thisicket['userid'], photo=message.photo[0].file_id, caption=message.caption)
+    except:
+        datamessagehere="\n".join(
+            [
+                '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"error" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+        html_text2="\n".join(
+            [
+                '<b>🤖 Бот КриптоКонсалтинг:</b>',
+                '',
+                'Клиент завершил диалог, нажмите на ❌ Завершить'
+            ]
+        )
+        endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='❌ Завершить',
+                callback_data='operator_end_inline_ticket_error'
+            )]
+        ]) 
+        await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+
+        #проверка на билет
+        raise CancelHandler()       
+
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"photo",
+        "mediaid":message.photo[0].file_id,
+        "isread":True}
+
+    ticket_collection.find_and_modify(
+        query={"ticketid":thisicket["ticketid"]},
+        update={'$addToSet': { 'extrafield': extradd }}
+    )
+
+@dp.message_handler(content_types=['photo'],state=ProjectManage.awaitingsup)
+async def usercurrenttalk_photo(message: types.Message, state: FSMContext):
+    if message.caption==None:
+        message.caption=''
+
+    thisicket=ticket_collection.find_one({"userid":message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'},{'isopen':'created'}]})
+    thisuser = user_collection.find_one({"user_id":message.from_user.id})
+    if thisicket["isopen"]=="onair":
+    
+        await bot.send_photo(chat_id=thisicket['operator'], photo=message.photo[0].file_id, caption=message.caption)
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.caption
+            ]
+        )
+        extradd={
+            "side":"fromoperator" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"photo",
+            "mediaid":message.photo[0].file_id,
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+    elif thisicket["isopen"]=="onpause" or thisicket["isopen"]=="created":
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.caption
+            ]
+        )
+        extradd={
+            "side":"fromoperator" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"photo",
+            "mediaid":message.photo[0].file_id,
+            "isread":False}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+
+
+
+###################################БЛОК ОТПРАВКИ Видюшшеччекк########################################################
+
+@dp.message_handler( content_types=['video'], state=SupportManage.onair)
+async def currenttalk_video(message: types.Message):
+
+    thisoperator =  staff_collection.find_one({"user_id":message.from_user.id})
+    if message.caption==None:
+        message.caption=''
+    tomsas="\n".join(
+        [
+            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            message.caption
+        ]
+    )
+    thisicket=ticket_collection.find_one({"operator":message.from_user.id, "isopen":"onair"})
+    try:
+        await bot.send_video(chat_id=thisicket['userid'], video=message.video.file_id, caption=message.caption)
+    except:
+        datamessagehere="\n".join(
+            [
+                '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"error" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+        html_text2="\n".join(
+            [
+                '<b>🤖 Бот КриптоКонсалтинг:</b>',
+                '',
+                'Клиент завершил диалог, нажмите на ❌ Завершить'
+            ]
+        )
+        endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='❌ Завершить',
+                callback_data='operator_end_inline_ticket_error'
+            )]
+        ]) 
+        await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+
+        #проверка на билет
+        raise CancelHandler()       
+
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"video",
+        "mediaid":message.video.file_id,
+        "isread":True}
+
+    ticket_collection.find_and_modify(
+        query={"ticketid":thisicket["ticketid"]},
+        update={'$addToSet': { 'extrafield': extradd }}
+    )
+
+@dp.message_handler(content_types=['video'],state=ProjectManage.awaitingsup)
+async def usercurrenttalk_video(message: types.Message, state: FSMContext):
+    if message.caption==None:
+        message.caption=''
+
+    thisicket=ticket_collection.find_one({"userid":message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'},{'isopen':'created'}]})
+    thisuser = user_collection.find_one({"user_id":message.from_user.id})
+    if thisicket["isopen"]=="onair":
+    
+        await bot.send_video(chat_id=thisicket['operator'], video=message.video.file_id, caption=message.caption)
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.caption
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"video",
+            "mediaid":message.video.file_id,
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+    elif thisicket["isopen"]=="onpause" or thisicket["isopen"]=="created":
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.caption
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"video",
+            "mediaid":message.video.file_id,
+            "isread":False}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+
+
+###################################БЛОК ОТПРАВКИ Видевоквужочков########################################################
+
+@dp.message_handler( content_types=['video_note'], state=SupportManage.onair)
+async def currenttalk_video_note(message: types.Message):
+    thisoperator =  staff_collection.find_one({"user_id":message.from_user.id})
+    tomsas="\n".join(
+        [
+            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+        ]
+    )
+    thisicket=ticket_collection.find_one({"operator":message.from_user.id, "isopen":"onair"})
+    try:
+        await bot.send_video_note(chat_id=thisicket['userid'], video_note=message.video_note.file_id)
+    except:
+        datamessagehere="\n".join(
+            [
+                '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"error" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+        html_text2="\n".join(
+            [
+                '<b>🤖 Бот КриптоКонсалтинг:</b>',
+                '',
+                'Клиент завершил диалог, нажмите на ❌ Завершить'
+            ]
+        )
+        endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='❌ Завершить',
+                callback_data='operator_end_inline_ticket_error'
+            )]
+        ]) 
+        await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+
+        #проверка на билет
+        raise CancelHandler()       
+
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"video_note",
+        "mediaid":message.video_note.file_id,
+        "isread":True}
+
+    ticket_collection.find_and_modify(
+        query={"ticketid":thisicket["ticketid"]},
+        update={'$addToSet': { 'extrafield': extradd }}
+    )
+
+@dp.message_handler(content_types=['video_note'],state=ProjectManage.awaitingsup)
+async def usercurrenttalk_video_note(message: types.Message, state: FSMContext):
+
+
+    thisicket=ticket_collection.find_one({"userid":message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'},{'isopen':'created'}]})
+    thisuser = user_collection.find_one({"user_id":message.from_user.id})
+    if thisicket["isopen"]=="onair":
+    
+        await bot.send_video_note(chat_id=thisicket['operator'], voice=message.video_note.file_id)
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"video_note",
+            "mediaid":message.video_note.file_id,
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+    elif thisicket["isopen"]=="onpause" or thisicket["isopen"]=="created":
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"video_note",
+            "mediaid":message.video_note.file_id,
+            "isread":False}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+
+
+###################################БЛОК ОТПРАВКИ Файликов########################################################
+
+@dp.message_handler( content_types=['document'], state=SupportManage.onair)
+async def currenttalk_doc(message: types.Message):
+
+    thisoperator =  staff_collection.find_one({"user_id":message.from_user.id})
+    if message.caption==None:
+        message.caption=''
+    tomsas="\n".join(
+        [
+            '<b>👨‍💻 '+thisoperator["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            message.caption
+        ]
+    )
+    thisicket=ticket_collection.find_one({"operator":message.from_user.id, "isopen":"onair"})
+    try:
+        await bot.send_document(chat_id=thisicket['userid'], document=message.document.file_id, caption=message.caption)
+    except:
+        datamessagehere="\n".join(
+            [
+                '<b>‼️Ошибка, похоже клиент забанил бота‼️</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+            ]
+        )
+        extradd={
+            "side":"error" ,
+            "date": datetime.now(), 
+            "text":datamessagehere,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+        html_text2="\n".join(
+            [
+                '<b>🤖 Бот КриптоКонсалтинг:</b>',
+                '',
+                'Клиент завершил диалог, нажмите на ❌ Завершить'
+            ]
+        )
+        endinline= InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(
+                text='❌ Завершить',
+                callback_data='operator_end_inline_ticket_error'
+            )]
+        ]) 
+        await bot.send_photo(chat_id=thisicket['operator'],parse_mode='HTML', photo=photoparser('clientfinished'), reply_markup=ReplyKeyboardRemove())
+        await bot.send_message(chat_id=thisicket['operator'], text=html_text2,parse_mode='HTML',reply_markup=endinline)
+
+        #проверка на билет
+        raise CancelHandler()       
+
+    extradd={
+        "side":"fromoperator" ,
+        "date": datetime.now(), 
+        "text":tomsas,
+        "from_id":message.from_user.id,
+        "message_from_id":message.message_id,
+        "type":"document",
+        "mediaid":message.document.file_id,
+        "isread":True}
+
+    ticket_collection.find_and_modify(
+        query={"ticketid":thisicket["ticketid"]},
+        update={'$addToSet': { 'extrafield': extradd }}
+    )
+
+@dp.message_handler(content_types=['document'],state=ProjectManage.awaitingsup)
+async def usercurrenttalk_doc(message: types.Message, state: FSMContext):
+    if message.caption==None:
+        message.caption=''
+
+    thisicket=ticket_collection.find_one({"userid":message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'},{'isopen':'created'}]})
+    thisuser = user_collection.find_one({"user_id":message.from_user.id})
+    if thisicket["isopen"]=="onair":
+    
+        await bot.send_document(chat_id=thisicket['operator'], document=message.document.file_id, caption=message.caption)
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.caption
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"document",
+            "mediaid":message.document.file_id,
+            "isread":True}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+    elif thisicket["isopen"]=="onpause" or thisicket["isopen"]=="created":
+        tomsas="\n".join(
+            [
+                '<b>🗣️ '+thisuser["callmeas"]+':</b> <i>('+datetime.now().strftime("%d.%m.%Y / %H:%M")+')</i>',
+                message.caption
+            ]
+        )
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(), 
+            "text":tomsas,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"document",
+            "mediaid":message.document.file_id,
+            "isread":False}
+
+        ticket_collection.find_and_modify(
+            query={"ticketid":thisicket["ticketid"]},
+            update={'$addToSet': { 'extrafield': extradd }}
+        )
+
+# @dp.message_handler(state=ProjectManage.preparingquest)
+# async def usercantresolve(message: types.Message):
+#     await message.answer(text='Пожалуйста, выберите категорию обращения выше',parse_mode='HTML',reply_markup=userendsupport)
 

@@ -1,18 +1,24 @@
+from typing import final
 from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
 import math
 import secrets
 import random
 from datetime import datetime
+from aiogram.types.message import Message
+import json
+import aiogram_broadcaster
+from aiogram_broadcaster import message_broadcaster
 from data.config import partner_collection,links_collection,user_collection, staff_collection, settings_collection, pmessages_collection, photos_collection
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, message_id
 from loader import dp,bot
 from states import ProjectManage,SupportManage, SetupBTSstates
 from aiogram.dispatcher import FSMContext
-from utils.misc import reverse_check,get_partner_obj, system_text_parser,issupport, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from,   get_user_city, linkparser, linkparser_default
+from utils.misc import build_support_menu, reverse_check,get_partner_obj, system_text_parser,issupport, isadmin, support_role_check, xstr, photoparser, parse_message_by_tag_name, get_user_came_from,   get_user_city, linkparser, linkparser_default
 from aiogram.types import InputMediaPhoto
 from keyboards.default import defaultmenu,operatorshowuser
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages
+
 
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
@@ -35,31 +41,9 @@ async def bot_start(message: types.Message):
 
     else:
         if issupport(message.from_user.id) == True:
-            html_text="\n".join(
-                [
-                    '👇 Следите за новыми запросами! 👇'
-                ]
-            )
-            supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-                [InlineKeyboardButton(
-                    text='📄 Входящие запросы',
-                    callback_data='to_tickets'
-                )],
-                [InlineKeyboardButton(
-                    text='⚙️ Настройки (в разработке)',
-                    callback_data='to_settings'
-                )]
-            ]) 
-            if isadmin(message.from_user.id)== True:
-                supportmenubase.add(InlineKeyboardButton(
-                text='💎 Админпанель',
-                callback_data='to_admin_menu'
-            ))
-            if support_role_check(message.from_user.id)== "PLUS":
-                supportmenubase.add(InlineKeyboardButton(
-                    text='🗄 Отчеты',
-                    callback_data='to_csv_tables'
-                ))
+            
+            html_text,supportmenubase=build_support_menu(message.from_user.id)
+
             await message.answer_photo(photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase )     
            
             await SupportManage.menu.set()  
@@ -135,17 +119,7 @@ async def start_meeting_user_func(call:types.CallbackQuery):
     await ProjectManage.getnameuser.set()
     await call.message.edit_text(text=html_text, parse_mode='HTML', reply_markup=None)
 
-
-
-
-
-
 ########################################################Все что ниже должно быть внизу########################################################
-
-
-
-
-
 
 
 
@@ -220,31 +194,7 @@ async def menu_hand(message: types.Message, state: FSMContext):
         await bot.send_message(chat_id= message.from_user.id, text=html_text,parse_mode='HTML', reply_markup=inlinebutt)
         await ProjectManage.startmeeting.set()
     elif issupport(message.from_user.id) == True and reverse_check(message.from_user.id) == True:
-        html_text="\n".join(
-            [
-                '👇 Следите за новыми запросами! 👇'
-            ]
-        )
-        supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-            [InlineKeyboardButton(
-                text='📄 Входящие запросы',
-                callback_data='to_tickets'
-            )],
-            [InlineKeyboardButton(
-                text='⚙️ Настройки (в разработке)',
-                callback_data='to_settings'
-            )]
-        ]) 
-        if isadmin(message.from_user.id)== True:
-            supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-        if support_role_check(message.from_user.id)== "PLUS":
-            supportmenubase.add(InlineKeyboardButton(
-                text='🗄 Отчеты',
-                callback_data='to_csv_tables'
-            )) 
+        html_text,supportmenubase=build_support_menu(message.from_user.id)
         await state.reset_state()
         await SupportManage.menu.set()  
         #await message.answer(text=html_text,parse_mode='HTML',reply_markup=supportmenubase )
@@ -272,11 +222,11 @@ async def menu_hand(message: types.Message, state: FSMContext):
 
 
 
-@dp.message_handler(content_types=['photo'], state=SupportManage.menu)
-async def parsephoto_hand(message: types.Message, state: FSMContext): 
+# @dp.message_handler(content_types=['photo'], state=SupportManage.menu)
+# async def parsephoto_hand(message: types.Message, state: FSMContext): 
    
-    await message.answer(text=message.photo[0].file_id)
-    await bot.send_photo(chat_id=message.from_user.id, photo=message.photo[0].file_id, caption=message.caption)
+#     await message.answer(text=message.photo[0].file_id)
+#     await bot.send_photo(chat_id=message.from_user.id, photo=message.photo[0].file_id, caption=message.caption)
 
 @dp.message_handler(content_types=['video_note'], state=SupportManage.menu)
 async def parse_video_note_hand(message: types.Message, state: FSMContext): 
@@ -314,31 +264,7 @@ async def parse_video_hand(message: types.Message, state: FSMContext):
 @dp.message_handler(state=SupportManage.menu)
 async def support_menu_hand(message: types.Message, state: FSMContext):  
     if issupport(message.from_user.id) == True and reverse_check(message.from_user.id) == True:
-        html_text="\n".join(
-            [
-                '👇 Следите за новыми запросами! 👇'
-            ]
-        )
-        supportmenubase = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-            [InlineKeyboardButton(
-                text='📄 Входящие запросы',
-                callback_data='to_tickets'
-            )],
-            [InlineKeyboardButton(
-                text='⚙️ Настройки (в разработке)',
-                callback_data='to_settings'
-            )]
-        ]) 
-        if isadmin(message.from_user.id)== True:
-            supportmenubase.add(InlineKeyboardButton(
-            text='💎 Админпанель',
-            callback_data='to_admin_menu'
-        ))
-        if support_role_check(message.from_user.id)== "PLUS":
-            supportmenubase.add(InlineKeyboardButton(
-                text='🗄 Отчеты',
-                callback_data='to_csv_tables'
-            )) 
+        html_text,supportmenubase=build_support_menu(message.from_user.id) 
         await state.reset_state()
         await SupportManage.menu.set()     
         await message.answer_photo(photo=photoparser("operatormainmenu"), caption=html_text,parse_mode='HTML',reply_markup=supportmenubase )   
