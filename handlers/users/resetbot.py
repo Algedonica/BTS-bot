@@ -12,7 +12,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
-from utils.misc import build_support_menu,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, issupport
+from utils.misc import get_partner_channel, build_support_menu,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, issupport
 
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
@@ -67,8 +67,48 @@ async def resetbot_byuser(message: types.Message):
 
             ]
         ) 
-        ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere}})
-        await bot.send_message(chat_id=channelid, text=datamessagehere)
+        tomad= "\n".join([
+            "Диалог закрыт клиентом ",
+            "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+        ])
+        extradd={
+            "side":"fromuser" ,
+            "date": datetime.now(),
+            "text":tomad,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+        photos=await bot.get_user_profile_photos(user_id=thisicket['userid'], limit=1)
+
+        if photos.total_count>0:
+            photofinal=photos.photos[0][0].file_id
+
+            mesid=await bot.send_photo(chat_id=channelid, caption=datamessagehere, photo=photofinal)   
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_photo(chat_id=channelid_partner, caption=datamessagehere, photo=photofinal)  
+                ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd } })
+            ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':'none', 'original_channel_partner':'none',}, '$addToSet': { 'extrafield': extradd } })
+
+        else:
+            mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)   
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_message(chat_id=channelid_partner, text=datamessagehere)
+                ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd } })
+            ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':'none', 'original_channel_partner':'none',}, '$addToSet': { 'extrafield': extradd } })
+
+
+
+
+
+
+
+
+
 
 
         if thisicket['operator']!='none':
@@ -163,7 +203,7 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
 
             ]
         )
-        ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
+        # ticket_collection.update({"operator": message.from_user.id, "isopen": "onair"},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere}})
         
         html_text2="\n".join(
             [
@@ -178,7 +218,42 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
         ]) 
         await bot.send_photo(chat_id=thisicket['userid'],photo=photoparser('operatorticketfinished') ,caption=html_text2,parse_mode='HTML',reply_markup=ReplyKeyboardRemove())
         await bot.send_message(chat_id=thisicket['userid'],text='Оператор завершил диалог',parse_mode='HTML',reply_markup=clientgotomenu)
-        await bot.send_message(chat_id=channelid, text=datamessagehere)
+        tomad= "\n".join([
+            "Диалог закрыт оператором ",
+            "<i>"+datetime.now().strftime("%d.%m.%Y / %H:%M")+"</i>"
+        ])
+        extradd={
+            "side":"fromoperator" ,
+            "date": datetime.now(),
+            "text":tomad,
+            "from_id":message.from_user.id,
+            "message_from_id":message.message_id,
+            "type":"text",
+            "mediaid":"none",
+            "isread":True}
+
+
+        photos=await bot.get_user_profile_photos(user_id=thisicket['userid'], limit=1)
+
+        if photos.total_count>0:
+            photofinal=photos.photos[0][0].file_id
+
+            mesid=await bot.send_photo(chat_id=channelid, caption=datamessagehere, photo=photofinal)
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_photo(chat_id=channelid_partner, caption=datamessagehere, photo=photofinal)
+                ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'],'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            
+
+        else:
+            mesid=await bot.send_message(chat_id=channelid, text=datamessagehere)
+            channelid_partner=get_partner_channel(thisicket['citytag'])
+            if channelid_partner!='none':
+                mesid_partner=await bot.send_message(chat_id=channelid_partner, text=datamessagehere)
+                ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'],'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            ticket_collection.update({"ticketid":thisicket['ticketid']},{"$set":{"isopen":"closedbyoperator","messagedata":datamessagehere,'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id']},'$addToSet': { 'extrafield': extradd }})
+            
     html_text,supportmenubase=build_support_menu(message.from_user.id)
          
     await bot.send_message(chat_id=message.from_user.id,text='Успешно',parse_mode='HTML',reply_markup=ReplyKeyboardRemove())

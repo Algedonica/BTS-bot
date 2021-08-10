@@ -222,11 +222,11 @@ async def menu_hand(message: types.Message, state: FSMContext):
 
 
 
-# @dp.message_handler(content_types=['photo'], state=SupportManage.menu)
-# async def parsephoto_hand(message: types.Message, state: FSMContext): 
+@dp.message_handler(content_types=['photo'], state=SupportManage.menu)
+async def parsephoto_hand(message: types.Message, state: FSMContext): 
    
-#     await message.answer(text=message.photo[0].file_id)
-#     await bot.send_photo(chat_id=message.from_user.id, photo=message.photo[0].file_id, caption=message.caption)
+    await message.answer(text=message.photo[0].file_id)
+    await bot.send_photo(chat_id=message.from_user.id, photo=message.photo[0].file_id, caption=message.caption)
 
 @dp.message_handler(content_types=['video_note'], state=SupportManage.menu)
 async def parse_video_note_hand(message: types.Message, state: FSMContext): 

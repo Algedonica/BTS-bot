@@ -1,11 +1,13 @@
+from re import split
 import secrets
 import math
 from datetime import datetime
+from typing import Text
 from aiogram import types
 from loader import dp, bot
-from data.config import links_collection, partner_collection, user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection, channelid
+from data.config import inline_materials_collection, links_collection, partner_collection, user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection, channelid
 from states import ProjectManage,SupportManage
-from aiogram.types import CallbackQuery,ReplyKeyboardRemove, InputFile
+from aiogram.types import CallbackQuery,ReplyKeyboardRemove, InputFile, message
 from aiogram.utils.callback_data import CallbackData
 from utils.misc.logging import logging
 from utils.misc import rate_limit
@@ -1932,17 +1934,6 @@ async def generate_agent_button(query: types.InlineQuery):
 
 
 
-#-------------------------------------инлайн ответы---------------------------
-
-
-@dp.inline_handler(state='*')
-async def show_inline_materials(query: types.InlineQuery):
-    
-
-
-
-#-------------------------------------инлайн ответы конец---------------------------
-
 
 
 # ----------------здесь инлайн функции конец-----------------------
@@ -2906,7 +2897,87 @@ async def usercurrenttalk_doc(message: types.Message, state: FSMContext):
             update={'$addToSet': { 'extrafield': extradd }}
         )
 
-# @dp.message_handler(state=ProjectManage.preparingquest)
-# async def usercantresolve(message: types.Message):
-#     await message.answer(text='Пожалуйста, выберите категорию обращения выше',parse_mode='HTML',reply_markup=userendsupport)
 
+
+
+#-------------------------------------инлайн ответы---------------------------
+@dp.message_handler( text='/creatematerial', state=SupportManage.menu)
+async def generatematerial(message: types.Message):
+    xs=secrets.token_hex(4)+'MATERIAL'+"{:03d}".format(secrets.randbelow(999))
+    await message.answer(xs)
+
+
+# 1. если содержаит #
+# 2. просто слово искать
+# 3. 
+@dp.inline_handler(state='*')
+async def show_inline_materials(query: types.InlineQuery):
+   
+    if len(query.query)<1:
+        raise CancelHandler() 
+    elif query.query.startswith('#'):
+        string_modified=query.query.replace('#', '')
+        materials_arr=inline_materials_collection.find({'category':{'$regex':string_modified}})
+        results_arr=[]
+
+        for mat_obj in materials_arr:
+
+            toadd=types.InlineQueryResultArticle(
+                id=mat_obj['material_id'],
+                title=mat_obj['title'],
+                description=mat_obj['description'],
+                input_message_content=types.InputMessageContent(message_text=mat_obj['text'], parse_mode='HTML'),
+                thumb_url=mat_obj['thumb']
+            )
+
+            results_arr.append(toadd)
+            
+        await query.answer(
+            results=results_arr,
+            cache_time=0,
+            is_personal=True
+        )
+    else:
+        materials_arr=inline_materials_collection.find(
+            { "$text": { "$search": query.query}},
+            { "score": { "$meta": "textScore" } }
+            ).sort([('score', {'$meta': 'textScore'})])
+        results_arr=[]
+
+        for mat_obj in materials_arr:
+
+            toadd=types.InlineQueryResultArticle(
+                id=mat_obj['material_id'],
+                title=mat_obj['title'],
+                description=mat_obj['description'],
+                input_message_content=types.InputMessageContent(message_text=mat_obj['text'], parse_mode='HTML'),
+                thumb_url=mat_obj['thumb']
+            )
+
+            results_arr.append(toadd)
+            
+        await query.answer(
+            results=results_arr,
+            cache_time=0,
+            is_personal=True
+        )
+
+
+    # i=1
+    # toadd=types.InlineQueryResultArticle(
+    #     id=i,
+    #     title='🔍 Быстрые ответы',
+    #     description='введите ключевое слово...\nБиткоин\nО нас\nО вас?\nГлаз',
+    #     input_message_content=types.InputMessageContent(message_text="<b>💎 ООО «Крипто Консалтинг»</b> — \nпроводник в мир криптовалют https://telegra.ph/CHto-takoe-majning-07-12  https://telegra.ph/CHto-takoe-BITCOIN-07-11  https://telegra.ph/Gde-kupit-Bitcoin-07-12", parse_mode='HTML')
+        
+    # )
+
+    # results_arr.append(toadd)
+    
+    # await query.answer(
+    #     results=results_arr,
+    #     cache_time=0,
+    #     is_personal=True
+    # )
+
+#-------------------------------------инлайн ответы конец---------------------------

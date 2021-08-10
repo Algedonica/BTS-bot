@@ -25,6 +25,7 @@ partner_collection=db.partner
 links_collection=db.partnerlinks
 broadcast_collection=db.broadcast
 
+inline_materials_collection=db.inline_materials
 
 settings_obj=settings_collection.find_one({"settings":"mainsettings"})
 channelid=settings_obj['main_channel_id']
