@@ -1319,7 +1319,7 @@ async def tonewticketsfunc(call:types.CallbackQuery):
             opentickets.add(thisbutton)
     opentickets.add(InlineKeyboardButton(text="⬅ Вернуться к обращениям",callback_data='to_tickets'))
 
-    # await call.message.edit_text(text="<b>📛 Новые: 🗣"+str(newticket.count())+"</b>",reply_markup=opentickets)
+
     await call.message.edit_media(media=InputMediaPhoto(media=photoparser("waiting"), caption="<b>🔥 Новые: 🗣"+str(newticket.count())+"</b>"), reply_markup=opentickets) 
 
 @dp.callback_query_handler(text='tourpaused', state=SupportManage.menu)
@@ -1801,7 +1801,7 @@ async def system_operator_city_change_func(call: types.CallbackQuery, callback_d
         galka=""
         deleteoradd="1"
         if i['system_tag'] in cities:
-            galka="✔️"
+            galka="✅"
             deleteoradd="0"
         inlinekeys.add(InlineKeyboardButton(text=galka+i["city_name"]+' : '+i["system_tag"], callback_data=edit_something_admin.new('ecu',i["system_tag"],deleteoradd,int(callback_data.get("page")) )))
     inlinekeys.add(InlineKeyboardButton(text='Назад к оператору',callback_data=show_support_pages.new("openoperator",page=int(callback_data.get("page")))))
@@ -1832,7 +1832,7 @@ async def system_operator_city_change_and_update_func(call: types.CallbackQuery,
         galka=""
         deleteoradd="1"
         if i['system_tag'] in cities:
-            galka="✔️"
+            galka="✅"
             deleteoradd="0"
         inlinekeys.add(InlineKeyboardButton(text=galka+i["city_name"]+' : '+i["system_tag"], callback_data=edit_something_admin.new('ecu',i["system_tag"],deleteoradd,int(callback_data.get("userid")) )))
     inlinekeys.add(InlineKeyboardButton(text='Назад к оператору',callback_data=show_support_pages.new("openoperator",page=int(callback_data.get("userid")))))
@@ -1983,11 +1983,28 @@ async def showcard(call:types.CallbackQuery, callback_data:dict):
     x=''
     if thisuser['username']!='none':
         x=' (@'+thisuser['username']+')'
+
+
+    notread_string=' '
+    notread_count=0
+    notread=thisicket['extrafield']
+    for lm in notread:
+        if lm['isread']==False:
+            notread_count+=1
+
+    if notread_count > 0:
+        notread_string="\n".join([
+            '❗️ '+str(notread_count)+'-непрочитанных сообщений.'
+        ])
+
+    
     html_text="\n".join(
         [
             '<b>ID тикета: '+thisicket["ticketid"]+'</b> ',
             '<b>'+thisuser['callmeas']+x+':</b> '+thisicket['title'],
-            '<b>Город: </b>'+thisuser['city']
+            '<b>Город: </b>'+thisuser['city'],
+            ' ',
+            notread_string
         ]
     )        
     inlinekeyb=InlineKeyboardMarkup(row_width=1, inline_keyboard=[
@@ -2907,9 +2924,6 @@ async def generatematerial(message: types.Message):
     await message.answer(xs)
 
 
-# 1. если содержаит #
-# 2. просто слово искать
-# 3. 
 @dp.inline_handler(state='*')
 async def show_inline_materials(query: types.InlineQuery):
    
@@ -2962,22 +2976,5 @@ async def show_inline_materials(query: types.InlineQuery):
             is_personal=True
         )
 
-
-    # i=1
-    # toadd=types.InlineQueryResultArticle(
-    #     id=i,
-    #     title='🔍 Быстрые ответы',
-    #     description='введите ключевое слово...\nБиткоин\nО нас\nО вас?\nГлаз',
-    #     input_message_content=types.InputMessageContent(message_text="<b>💎 ООО «Крипто Консалтинг»</b> — \nпроводник в мир криптовалют https://telegra.ph/CHto-takoe-majning-07-12  https://telegra.ph/CHto-takoe-BITCOIN-07-11  https://telegra.ph/Gde-kupit-Bitcoin-07-12", parse_mode='HTML')
-        
-    # )
-
-    # results_arr.append(toadd)
-    
-    # await query.answer(
-    #     results=results_arr,
-    #     cache_time=0,
-    #     is_personal=True
-    # )
 
 #-------------------------------------инлайн ответы конец---------------------------

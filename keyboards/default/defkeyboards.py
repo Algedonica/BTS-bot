@@ -10,10 +10,14 @@ defaultmenu = ReplyKeyboardMarkup(
             KeyboardButton(text='📚 Новичку'),
         ],
         [
-             KeyboardButton(text='💵 Курс валют'),
+            KeyboardButton(text='💵 Курс валют'),
             KeyboardButton(text='💎 Партнерам «КК»'),
+            # KeyboardButton(text='🔐 Кошельки')
            
-        ]
+        ],
+        [
+            KeyboardButton(text='🔐 Кошельки')
+        ],
     ],
     resize_keyboard=True
 )

@@ -10,3 +10,5 @@ knowledge_list_call= CallbackData("knowledge_list_factory","command","param1","p
 about_team_call= CallbackData("about_team_factory","command","param1","param2")
 
 show_broadcast_pages=CallbackData("brdcstfctr","command","param1","param2")
+
+wallet_call=CallbackData("wcfctr","command","param1","param2" )

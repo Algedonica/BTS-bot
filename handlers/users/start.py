@@ -222,6 +222,8 @@ async def menu_hand(message: types.Message, state: FSMContext):
 
 
 
+
+
 @dp.message_handler(content_types=['photo'], state=SupportManage.menu)
 async def parsephoto_hand(message: types.Message, state: FSMContext): 
    
@@ -249,10 +251,29 @@ async def parse_video_hand(message: types.Message, state: FSMContext):
     photosss=photos_collection.find({})
     for x in photosss:
         await bot.send_photo(chat_id=message.from_user.id, photo=x['photo_id'], caption=x['name']+' '+x['photo_id'])
+    settingsphotoss=settings_collection.find_one({'settings':'mainsettings'})
+    settingsphcollection=settingsphotoss['photos_profile']
+    for y in settingsphcollection:
+        await bot.send_photo(chat_id=message.from_user.id, photo=y, caption=y)
+
 
 @dp.message_handler(text='createtagg', state=SupportManage.menu)
 async def parse_video_hand(message: types.Message, state: FSMContext): 
     await message.answer(text=secrets.token_hex(10)+"{:03d}".format(secrets.randbelow(999)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

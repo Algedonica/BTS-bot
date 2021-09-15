@@ -24,8 +24,10 @@ videocircles_collection=db.videocircle
 partner_collection=db.partner
 links_collection=db.partnerlinks
 broadcast_collection=db.broadcast
-
 inline_materials_collection=db.inline_materials
+
+wallets_collection=db.wallets
+advertise_collection=db.advertise
 
 settings_obj=settings_collection.find_one({"settings":"mainsettings"})
 channelid=settings_obj['main_channel_id']

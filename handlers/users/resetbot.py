@@ -17,11 +17,7 @@ from utils.misc import get_partner_channel, build_support_menu,isadmin,support_r
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
 @dp.message_handler(text="/reset", state=[
-    ProjectManage.menu, 
-    ProjectManage.awaitingsup,
-    ProjectManage.initializingsup, 
-    ProjectManage.preparingquest, 
-    ProjectManage.onair
+    ProjectManage
     ])
 async def resetbot_byuser(message: types.Message):
     thisicket=ticket_collection.find_one({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]})
@@ -101,16 +97,6 @@ async def resetbot_byuser(message: types.Message):
                 ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':mesid_partner['message_id'], 'original_channel_partner':mesid_partner['sender_chat']['id']}, '$addToSet': { 'extrafield': extradd } })
             ticket_collection.update({"userid": message.from_user.id, "$or":[{'isopen':'onair'},{'isopen':'onpause'}, {'isopen':'created'}]},{"$set":{"isopen":"closedbyclient", "messagedata":datamessagehere, 'original_id':mesid['message_id'], 'original_channel':mesid['sender_chat']['id'], 'original_id_partner':'none', 'original_channel_partner':'none',}, '$addToSet': { 'extrafield': extradd } })
 
-
-
-
-
-
-
-
-
-
-
         if thisicket['operator']!='none':
             html_text2="\n".join(
                 [
@@ -152,17 +138,7 @@ async def resetbot_byuser(message: types.Message):
 
 
 @dp.message_handler(text="/reset", state=[
-    SupportManage.menu,
-    SupportManage.awaitingsup, 
-    SupportManage.initializingsup, 
-    SupportManage.onair, 
-    SupportManage.changeoperatorname, 
-    SupportManage.addcityinput,  
-    SupportManage.initcsv,  
-    SupportManage.inittimecsv,  
-    SupportManage.accept_time,  
-    SupportManage.knowledge_set_title,  
-    SupportManage.knowledge_set_descr,
+    SupportManage
     ])
 async def resetbot_byoperator(message: types.Message, state: FSMContext):
     thisicket=ticket_collection.find_one({"operator": message.from_user.id,"isopen": "onair"}) 
@@ -285,3 +261,27 @@ async def reverserole_for_staff(message: types.Message, state: FSMContext):
             update={ "$set": { 'isreverse': False} }
             )
         await message.answer('Напишите что-нибудь', reply_markup=ReplyKeyboardRemove())    
+
+@dp.message_handler(text="/push", state=[SupportManage.menu])
+async def reversenotifications_for_staff(message: types.Message, state: FSMContext):
+    if issupport(message.from_user.id)==True:
+        thisstaff=staff_collection.find_one({"user_id":message.from_user.id})
+
+        if thisstaff['notified']=='disabled':
+            staff_collection.find_and_modify( 
+                query={"user_id":message.from_user.id}, 
+                update={ "$set": { 'notified': 'none'} }
+                )
+            await message.answer('<b>Уведомления включены. Для продолжения отправьте любое сообщение.</b>')
+        elif thisstaff['notified']=='none':
+            staff_collection.find_and_modify( 
+                query={"user_id":message.from_user.id}, 
+                update={ "$set": { 'notified': 'disabled'} }
+                )
+            await message.answer('<b>Уведомления отключены. Для продолжения отправьте любое сообщение.</b>')
+        elif thisstaff['notified']=='notified':
+            staff_collection.find_and_modify( 
+                query={"user_id":message.from_user.id}, 
+                update={ "$set": { 'notified': 'disabled'} }
+                )
+            await message.answer('<b>Уведомления отключены. Для продолжения отправьте любое сообщение.</b>')

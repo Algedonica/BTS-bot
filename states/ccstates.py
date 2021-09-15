@@ -11,6 +11,9 @@ class ProjectManage(StatesGroup):
     startmeeting = State()
     getcityuser = State()
     addglblcity = State()
+
+    addingwallet_name=State()
+    addingwallet_wallet=State()
 class SupportManage(StatesGroup):
     menu = State()
     awaitingsup = State()

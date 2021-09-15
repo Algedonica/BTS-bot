@@ -82,7 +82,7 @@ async def show_filtered_tables_csv_func(call: types.CallbackQuery, callback_data
     for x in opers:
         galka=""
         if x["user_id"] in opersarray:
-            galka="✔️"
+            galka="✅"
         inlinekeys.add(InlineKeyboardButton(text=galka+x["callmeas"]+' '+x["first_name"]+' ('+support_role_check(x['user_id'])+')', callback_data=csv_tables_call.new('init_csv_filtered',param1=page, param2=x["user_id"])))
 
     
@@ -168,7 +168,7 @@ async def show_table_cities_csv_func(call: types.CallbackQuery, callback_data:di
     for x in cities_obj:
         galka=""
         if x["code"] in citiesarray:
-            galka="✔️"
+            galka="✅"
         inlinekeys.add(InlineKeyboardButton(text=galka+x["code"]+' - '+x["city"], callback_data=csv_tables_call.new('to_csv_cities',param1=page, param2=x["code"])))
 
     
@@ -239,22 +239,16 @@ async def show_table_time_csv_func(call: types.CallbackQuery, callback_data:dict
 @dp.message_handler(state=SupportManage.accept_time)
 async def accept_time_csv_func(message: types.Message, state: FSMContext):
     thismsg=message.text
-    thismsg = thismsg.split(' - ')
-    months=['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+    thismsg = thismsg.split(' ')
+
     # try:
     timefrom = thismsg[0]
-    timefrom = timefrom.split(' ')
-    for x in months:
-        if timefrom[1] == x:
-            thismonth = months.index(x)+1 
-    timefrom = datetime(year=int(timefrom[2]), month=thismonth, day=int(timefrom[0]))
+    timefrom = timefrom.split('-')
+    timefrom = datetime(year=int(timefrom[2]), month=int(timefrom[1]), day=int(timefrom[0]))
 
     timeto = thismsg[1]
-    timeto = timeto.split(' ') 
-    for x in months:
-        if timeto[1] == x:
-            thismonth = months.index(x)+1 
-    timeto = datetime(year=int(timeto[2]), month=thismonth, day=int(timeto[0]))
+    timeto = timeto.split('-') 
+    timeto = datetime(year=int(timeto[2]), month=int(timeto[1]), day=int(timeto[0]))
 
 
     try:
@@ -284,8 +278,7 @@ async def accept_time_csv_func(message: types.Message, state: FSMContext):
                 'Operator_username', 
                 'Operator_name', 
                 'Operator_callmeas',
-                'chat', 
-                'chat_timed'])  
+                'Message_data',])  
             for x in tickets_found:
                 thisuser = user_collection.find_one({"user_id":x["userid"]})
                 thisoperator = staff_collection.find_one({"user_id":x["operator"]})
@@ -323,7 +316,6 @@ async def accept_time_csv_func(message: types.Message, state: FSMContext):
                     thisoperator['first_name']+' '+thisoperator['last_name'],
                     thisoperator['callmeas'],
                     x['messagedata'],
-                    x['messagedata_timed']
                     ])
         pathfinal = os.path.join(pathname, currentdate)
         await bot.send_document(chat_id=message.from_user.id, document=InputFile(pathfinal))
@@ -410,56 +402,3 @@ async def user_tables_csv(call:types.CallbackQuery, state: FSMContext):
     pathfinal = os.path.join(pathname, currentdate)
     await bot.send_document(chat_id=call.from_user.id, document=InputFile(pathfinal))
     os.remove(pathfinal)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # for user in avaiableusers:
-
-
-
-
-
-
-
-
-
-
-# @dp.callback_query_handler(text='init_csv_filtered', state=SupportManage.menu)
-# async def show_filtered_tables_csv(call:types.CallbackQuery):
-#     html_text="\n".join(
-#         [
-#             'Начинаем',
-#             'Пожалуйста, выберите ниже операторов, по которым нужна выгрузка'
-#         ]
-#     )
-#     supportmenubase = InlineKeyboardMarkup()
-#     supportmenubase.add(InlineKeyboardButton(
-#         text='Назад к меню выгрузки',
-#         callback_data='to_csv_tables'
-#     ))
-#     thisoperator=staff_collection.find_one({"user_id":call.from_user.id})
-
-#     opers=staff_collection.find({"staffrole":"support", "city_code": {"$in": thisoperator['city_code'][1:]}})
-
-#     for x in opers:
-#         print(x["user_id"])
-#     await call.message.edit_text(text=html_text, reply_markup=supportmenubase)   
-
-
-
-# # galka=""
-#         deleteoradd="1"
-#         if i['code'] in cities:
-#             galka="✔️"
-#             deleteoradd="0"

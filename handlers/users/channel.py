@@ -28,7 +28,7 @@ async def channelgetid(message: types.Message):
 
 @dp.message_handler(content_types=['photo','text'],chat_type=types.ChatType.SUPERGROUP, is_forwarded=True)
 async def groupcatcher(message: types.Message):
-
+    
     thismsgid=message.message_id
     thismsggrpid=message.chat.id
 
