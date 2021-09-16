@@ -255,8 +255,9 @@ async def my_wallets_open(call:CallbackQuery, callback_data:dict):
 async def show_wallets(query: types.InlineQuery):
     thisuserwallets=wallets_collection.find({'user_id':query.from_user.id, 'is_active':'active'})
     randomad=advertise_collection.aggregate([{ '$sample':{ 'size': 1}}])
+    randomad_str=' '
     for x in randomad:
-        randomad_str=(x['text'])
+        randomad_str=x['text']
     results_arr=[]
     i=1
     if thisuserwallets.count()>0:
