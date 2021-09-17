@@ -996,7 +996,7 @@ async def end_support(message: types.Message):
             [
                 '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
                 '<b>'+thisicket['title']+'</b>',
-                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '🗣 '+clientnickname+' - '+clientcallmeas+' - tg ID:'+str(thisicket['userid']),
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
                 '',
                 '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
@@ -1130,7 +1130,7 @@ async def end_supportbysupport_error(call: CallbackQuery):
 
                 '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
                 '<b>'+thisicket['title']+'</b>',
-                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '🗣 '+clientnickname+' - '+clientcallmeas+' - tg ID:'+str(thisicket['userid']),
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
                 '',
                 '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
@@ -1216,7 +1216,7 @@ async def end_supportbysupport(message: types.Message):
             [
                 '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
                 '<b>'+thisicket['title']+'</b>',
-                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '🗣 '+clientnickname+' - '+clientcallmeas+' - tg ID:'+str(thisicket['userid']),
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
                 '',
                 '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
@@ -1381,10 +1381,19 @@ async def to_tickets_func(call:types.CallbackQuery):
     
          
 
-@dp.callback_query_handler(text='supportbacktomenu', state=SupportManage.menu)
-async def supportbacktomenufunc(call:types.CallbackQuery):
+@dp.callback_query_handler(text='supportbacktomenu', state=SupportManage)
+async def supportbacktomenufunc(call:types.CallbackQuery, state:FSMContext):
     html_text,supportmenubase=build_support_menu(call.from_user.id)
+    await state.reset_state()
+    await SupportManage.menu.set()
     await call.message.edit_media(media=InputMediaPhoto(media=photoparser("operatormainmenu"), caption=html_text), reply_markup=supportmenubase) 
+@dp.callback_query_handler(text='supportbacktomenutwo', state=SupportManage)
+async def supportbacktomenutwofunc(call:types.CallbackQuery, state:FSMContext):
+    html_text,supportmenubase=build_support_menu(call.from_user.id)
+    await state.reset_state()
+    await SupportManage.menu.set()
+    await call.message.delete()
+    await call.message.answer_photo(photo=photoparser("operatormainmenu"), caption=html_text, reply_markup=supportmenubase) 
 
 ############################################admin_menu###########################################
 

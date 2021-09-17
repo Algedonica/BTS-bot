@@ -35,6 +35,9 @@ class SupportManage(StatesGroup):
 
     broadcast_post_edit_post=State()
     broadcast_post_edit_date=State()
+
+    extra_message_init=State()
+    extra_message_text=State()
 class SetupBTSstates(StatesGroup):
     getadmincode = State()
     catchadmincode = State()

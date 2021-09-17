@@ -279,16 +279,15 @@ def build_support_menu(x):
             text='📄 Входящие запросы',
             callback_data='to_tickets'
         )],
-        [InlineKeyboardButton(
-            text='⚙️ Настройки (в разработке)',
-            callback_data='to_settings'
-        )]
     ]) 
     if isadmin(x)== True:
         supportmenubase.add(InlineKeyboardButton(
         text='💎 Админпанель',
         callback_data='to_admin_menu'
-    ))
+    ),InlineKeyboardButton(
+            text='📯 Экспресс-сообщение',
+            callback_data='to_extra_msg'
+        ))
     if support_role_check(x)== "PLUS":
         supportmenubase.add(InlineKeyboardButton(
             text='🗄 Отчеты',

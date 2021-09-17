@@ -51,7 +51,7 @@ async def resetbot_byuser(message: types.Message):
             [
                 '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
                 '<b>'+thisicket['title']+'</b>',
-                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '🗣 '+clientnickname+' - '+clientcallmeas+' - tg ID:'+str(thisicket['userid']),
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
                 '',
                 '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
@@ -167,7 +167,7 @@ async def resetbot_byoperator(message: types.Message, state: FSMContext):
             [
                 '<b>№'+str(counttickets)+' '+thisicket['citytag']+'</b>',
                 '<b>'+thisicket['title']+'</b>',
-                '🗣 '+clientnickname+' - '+clientcallmeas,
+                '🗣 '+clientnickname+' - '+clientcallmeas+' - tg ID:'+str(thisicket['userid']),
                 '<i>'+thisicket['date'].strftime("%d.%m.%Y / %H:%M")+'</i>',
                 '',
                 '👨‍💻 '+operatornickname+' - '+operatorcallmeas,
@@ -285,3 +285,66 @@ async def reversenotifications_for_staff(message: types.Message, state: FSMConte
                 update={ "$set": { 'notified': 'disabled'} }
                 )
             await message.answer('<b>Уведомления отключены. Для продолжения отправьте любое сообщение.</b>')
+
+
+# inlinekeyb.add(InlineKeyboardButton(text="↩️ в меню",callback_data='supportbacktomenu'))
+
+
+
+
+
+
+@dp.callback_query_handler(text='to_extra_msg', state=SupportManage.menu)
+async def to_extra_msg(call: types.CallbackQuery):
+    html_text="\n".join(
+        [
+            'Введите ID пользователя Telegram',
+        ]
+    )
+    inlinekeyb=InlineKeyboardMarkup(row_width=1)
+    inlinekeyb.add(InlineKeyboardButton(text="↩️ Отменить и вернуться в меню",callback_data='supportbacktomenutwo'))
+    await call.message.delete()
+    await call.message.answer(text=html_text,reply_markup=inlinekeyb)
+    await SupportManage.extra_message_init.set()
+
+
+@dp.message_handler(state=[SupportManage.extra_message_init])
+async def extra_msg_idgot(message: types.Message, state:FSMContext):
+    html_text="\n".join(
+        [
+            'Напишите сообщение, которое нужно доставить пользователю.',
+        ]
+    )
+    inlinekeyb=InlineKeyboardMarkup(row_width=1)
+    inlinekeyb.add(InlineKeyboardButton(text="↩️ Отменить и вернуться в меню",callback_data='supportbacktomenutwo'))
+    await message.answer(text=html_text,reply_markup=inlinekeyb)
+    await SupportManage.extra_message_text.set()
+    await state.update_data(userid=message.text)
+
+@dp.message_handler(state=[SupportManage.extra_message_text])
+async def extra_msg_idgot(message: types.Message, state:FSMContext):
+    data = await state.get_data()
+    userid = int(data.get("userid"))
+    message_user=message.text
+
+    try:
+        await bot.send_message(chat_id=userid, text=message_user)
+        html_text="\n".join(
+            [
+                'Готово',
+            ]
+        )
+        inlinekeyb=InlineKeyboardMarkup(row_width=1)
+        inlinekeyb.add(InlineKeyboardButton(text="↩️ В меню",callback_data='supportbacktomenutwo'))
+        await message.answer(text=html_text,reply_markup=inlinekeyb)
+    except:
+        html_text="\n".join(
+            [
+                'Данный пользователь не найден в базе данных или бот был заблокирован.',
+                'Пожалуйста, вернитесь в главное меню и попробуйте снова'
+            ]
+        )
+        inlinekeyb=InlineKeyboardMarkup(row_width=1)
+        inlinekeyb.add(InlineKeyboardButton(text="↩️ В меню",callback_data='supportbacktomenutwo'))
+        await message.answer(text=html_text,reply_markup=inlinekeyb)
+
