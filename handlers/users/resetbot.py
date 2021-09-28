@@ -13,7 +13,7 @@ from aiogram.dispatcher import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.types import InputMediaPhoto
 from utils.misc import get_partner_channel, build_support_menu,isadmin,support_role_check, xstr, photoparser, parse_message_by_tag_name, getCryptoData, parse_video_by_tag_name, send_to_channel, issupport
-
+from aiogram.dispatcher.handler import CancelHandler
 from keyboards.inline import usersupportchoiceinline, ticket_callback, add_operator_callback, show_support_pages, edit_something_admin, show_cities_pages, knowledge_list_call
 from keyboards.default import userendsupport,defaultmenu, operatorcontrol,operatorshowuser
 @dp.message_handler(text="/reset", state=[
@@ -302,10 +302,50 @@ async def to_extra_msg(call: types.CallbackQuery):
         ]
     )
     inlinekeyb=InlineKeyboardMarkup(row_width=1)
+    inlinekeyb.add(InlineKeyboardButton(text="🔎 Найти контакт",switch_inline_query_current_chat='ff_'))
     inlinekeyb.add(InlineKeyboardButton(text="↩️ Отменить и вернуться в меню",callback_data='supportbacktomenutwo'))
+
     await call.message.delete()
     await call.message.answer(text=html_text,reply_markup=inlinekeyb)
     await SupportManage.extra_message_init.set()
+
+
+
+@dp.inline_handler(regexp="ff_", state=SupportManage)
+async def initialize_adding_operator_tosys(query: types.InlineQuery):
+    if len(query.query)<4 or isadmin(query.from_user.id)==False:
+        raise CancelHandler() 
+    elif query.query.startswith('ff_'):
+        string_modified=query.query.replace('ff_', '')
+        users_arr=user_collection.find({'callmeas':{'$regex':string_modified,"$options": "-i"}})
+        results_arr=[]
+        for mat_obj in users_arr:
+            first_name=mat_obj['first_name']
+            last_name=mat_obj['last_name']
+            if first_name=='none':
+                first_name=''
+            if last_name=='none':
+                last_name=''
+
+            toadd=types.InlineQueryResultArticle(
+                id=mat_obj['user_id'],
+                title=mat_obj['callmeas']+': '+first_name+' '+last_name,
+                description=mat_obj['citytag']+' '+str(mat_obj['user_id']),
+                input_message_content=types.InputMessageContent(message_text=mat_obj['user_id'], parse_mode='HTML'),
+            )
+
+            results_arr.append(toadd)       
+        await query.answer(
+            results=results_arr,
+            cache_time=0,
+            
+        )
+
+
+
+
+
+
 
 
 @dp.message_handler(state=[SupportManage.extra_message_init])

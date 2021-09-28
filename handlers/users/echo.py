@@ -47,31 +47,26 @@ async def initialize_costs(message: types.Message):
             '<a href="t.me/cryptoconsbot?start=exchange">💎 Курс валют от ООО «Крипто Консалтинг»</a>'
         ]
     )
-
-
     img = Image.open(pathname+r"courses/courses.png")
     idraw = ImageDraw.Draw(img)
 
-    usd_headline = ImageFont.truetype(pathname+r'courses/Jura-Bold.ttf', size=60)
-    rub_headline = ImageFont.truetype(pathname+r'courses/Jura-Light.ttf', size=50)
-    change24_headline = ImageFont.truetype(pathname+r'courses/Jura-Light.ttf', size=50)
+    usd_headline = ImageFont.truetype(pathname+r'courses/Jura-Bold.ttf', size=80)
+    change24_headline = ImageFont.truetype(pathname+r'courses/Jura-Light.ttf', size=70)
+    time_headline = ImageFont.truetype(pathname+r'courses/Play-Regular.ttf', size=50)
 
     unicode_font = ImageFont.truetype(pathname+r"courses/arial.ttf", size=50)
 
     # SST
     text=getCryptoData('simba-storage-token')
     usd=str("{:,.2f}".format(text[0]))
-    rub=str("{:,.2f}".format(text[1]))
     if text[2]>0:
         change24=str("{:,.2f}".format(text[2]))+'%'
-        idraw.text((124,775), '▲', font=unicode_font, fill='#666666')
+        idraw.text((98,742), '▲', font=unicode_font, fill='#666666')
     else: 
         change24=str("{:,.2f}".format(text[2]))+'%'
-        idraw.text((124,775), '▼', font=unicode_font, fill='#666666')
-    
-    idraw.text((182,632), usd, font=usd_headline, fill='#B2904B')
-    idraw.text((182,710), rub, font=rub_headline, fill='#666666')
-    idraw.text((182,775), change24, font=change24_headline, fill='#666666')
+        idraw.text((98,742), '▼', font=unicode_font, fill='#666666')
+    idraw.text((180,620), usd, font=usd_headline, fill='#B2904B')
+    idraw.text((180,724), change24, font=change24_headline, fill='#666666')
 
     
     # ------------------------------------
@@ -79,37 +74,33 @@ async def initialize_costs(message: types.Message):
     # BTC
     text=getCryptoData('bitcoin')
     usd=str("{:,.2f}".format(text[0]))
-    rub=str("{:,.2f}".format(text[1]))
     if text[2]>0:
         change24=str("{:,.2f}".format(text[2]))+'%'
-        idraw.text((581,775), '▲', font=unicode_font, fill='#666666')
+        idraw.text((726,742), '▲', font=unicode_font, fill='#666666')
     else: 
         change24=str("{:,.2f}".format(text[2]))+'%'
-        idraw.text((581,775), '▼', font=unicode_font, fill='#666666')
+        idraw.text((726,742), '▼', font=unicode_font, fill='#666666')
     
-    idraw.text((639,632), usd, font=usd_headline, fill='#FF8A00')
-    idraw.text((639,710), rub, font=rub_headline, fill='#666666')
-    idraw.text((639,775), change24, font=change24_headline, fill='#666666')
+    idraw.text((808,620), usd, font=usd_headline, fill='#FF8A00')
+    idraw.text((808,724), change24, font=change24_headline, fill='#666666')
     # -------------------------------------
 
     # ETH
     text=getCryptoData('ethereum')
     usd=str("{:,.2f}".format(text[0]))
-    rub=str("{:,.2f}".format(text[1]))
     if text[2]>0:
         change24=str("{:,.2f}".format(text[2]))+'%'
-        idraw.text((1038,775), '▲', font=unicode_font, fill='#666666')
+        idraw.text((1354,742), '▲', font=unicode_font, fill='#666666')
     else: 
         change24=str("{:,.2f}".format(text[2]))+'%'
-        idraw.text((1038,775), '▼', font=unicode_font, fill='#666666')
+        idraw.text((1354,742), '▼', font=unicode_font, fill='#666666')
     
-    idraw.text((1096,632), usd, font=usd_headline, fill='#62688F')
-    idraw.text((1096,710), rub, font=rub_headline, fill='#666666')
-    idraw.text((1096,775), change24, font=change24_headline, fill='#666666')
+    idraw.text((1436,620), usd, font=usd_headline, fill='#62688F')
+    idraw.text((1436,724), change24, font=change24_headline, fill='#666666')
     # ------------------------------------
 
     datenow = datetime.now().strftime("%d.%m.%Y / %I:%M%p")
-    idraw.text((948,1020), datenow, font=change24_headline, fill='#A1DACC')
+    idraw.text((1337,983), datenow, font=time_headline, fill='#008164')
 
 
     img.save(pathname+r'courses/simba.png')

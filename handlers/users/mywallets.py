@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Callable
 from aiogram import types
 from aiogram.types import InputFile, ReplyKeyboardRemove, message
+from aiogram.types.fields import ListField
 from loader import dp, bot
 from data.config import user_collection, ticket_collection, staff_collection, settings_collection, wallets_collection, advertise_collection
 from states import ProjectManage,SupportManage
@@ -16,6 +17,7 @@ import secrets
 from keyboards.inline import csv_tables_call,wallet_call
 from keyboards.default import userendsupport,defaultmenu
 from aiogram.dispatcher.handler import CancelHandler
+from handlers.users.echo import scheduler
 
 @dp.message_handler(state=ProjectManage.menu, text='🔐 Кошельки')
 async def my_wallets_user(message: types.Message):

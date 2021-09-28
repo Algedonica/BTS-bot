@@ -2,6 +2,7 @@ from handlers.users import broadcaster
 from utils.set_bot_commands import set_default_commands
 from handlers.users.echo import scheduler
 from handlers.users.broadcaster import broadcaster_startup
+
 async def on_startup(dp):
     import filters
     import middlewares

@@ -1,8 +1,3 @@
-# Показать
-# 1. тикет(ы) + оператор(ы) + дата + тэг
-# 2. пользователи
-# 3. тикеты + тэг
-
 import math
 import csv
 
@@ -10,7 +5,7 @@ from datetime import datetime, timezone
 from aiogram import types
 from aiogram.types import InputFile, ReplyKeyboardRemove
 from loader import dp, bot
-from data.config import user_collection, ticket_collection, staff_collection, settings_collection
+from data.config import user_collection, ticket_collection, staff_collection, partner_collection
 from states import ProjectManage,SupportManage
 from aiogram.types import CallbackQuery,ReplyKeyboardRemove
 from aiogram.utils.callback_data import CallbackData
@@ -26,7 +21,7 @@ import sys,os
 pathname = os.path.dirname(sys.argv[0]) 
 
 
-@dp.callback_query_handler(text='to_csv_tables', state=[SupportManage.menu,SupportManage.initcsv])
+@dp.callback_query_handler(text='to_csv_tables', state=[SupportManage.menu,SupportManage.initcsv,SupportManage.accept_time,SupportManage.inittimecsv])
 async def show_menu_tables_csv(call:types.CallbackQuery, state: FSMContext):
     await call.answer(cache_time=0)
     await state.reset_state()
@@ -51,10 +46,10 @@ async def show_menu_tables_csv(call:types.CallbackQuery, state: FSMContext):
             callback_data='supportbacktomenu'
         )]
     ])
-    # await call.message.edit_text(text=html_text, reply_markup=supportmenubase)
+
     await call.message.edit_media(media=InputMediaPhoto(media=photoparser('gettablecsv'), caption=html_text), reply_markup=supportmenubase)
 
-@dp.callback_query_handler(csv_tables_call.filter(command='init_csv_filtered'), state=[SupportManage.menu,SupportManage.initcsv])
+@dp.callback_query_handler(csv_tables_call.filter(command='init_csv_filtered'), state=[SupportManage.menu,SupportManage.initcsv,SupportManage.inittimecsv])
 async def show_filtered_tables_csv_func(call: types.CallbackQuery, callback_data:dict, state: FSMContext):
     await call.answer(cache_time=0)
     page = callback_data.get("param1")
@@ -64,7 +59,7 @@ async def show_filtered_tables_csv_func(call: types.CallbackQuery, callback_data
     inlinekeys = InlineKeyboardMarkup(row_width=2)
     thisoperator=staff_collection.find_one({"user_id":call.from_user.id})
     thisoperator_cities=thisoperator['city_code'][1:]
-    opers=staff_collection.find({"staffrole":"support", "city_code": {"$in": thisoperator_cities}}).skip((page-1)*5).limit(5)
+    opers=staff_collection.find({"staffrole":{"$in":["support","admin","owner"]}, "city_code": {"$in": thisoperator_cities}}).skip((page-1)*5).limit(5)
     data = await state.get_data()
     opersarray = data.get("opers")
     
@@ -140,17 +135,9 @@ async def show_table_cities_csv_func(call: types.CallbackQuery, callback_data:di
     inlinekeys = InlineKeyboardMarkup(row_width=2)
     thisoperator=staff_collection.find_one({"user_id":call.from_user.id})
     thisoperator_cities=thisoperator['city_code'][1:]
-    avaliablecitiesarr=settings_collection.find_one({"settings":"mainsettings"})
-    cities_obj=avaliablecitiesarr["current_cities"]
+    cities_obj=partner_collection.find({'system_tag':{'$in': thisoperator_cities}}).skip((page-1)*5).limit(5)
     
-
-    for asd in cities_obj[:]:
-        if asd['code'] not in thisoperator_cities:
-            cities_obj.remove(asd)
-        
-    cities_obj_len = len(cities_obj)
-    cities_obj=cities_obj[((page-1)*5):(5*page)]
-    print(cities_obj)
+    cities_obj_len = cities_obj.count()
     data = await state.get_data()
     citiesarray = data.get("cities")
     
@@ -167,9 +154,9 @@ async def show_table_cities_csv_func(call: types.CallbackQuery, callback_data:di
         await state.update_data(cities=citiesarray)
     for x in cities_obj:
         galka=""
-        if x["code"] in citiesarray:
+        if x["system_tag"] in citiesarray:
             galka="✅"
-        inlinekeys.add(InlineKeyboardButton(text=galka+x["code"]+' - '+x["city"], callback_data=csv_tables_call.new('to_csv_cities',param1=page, param2=x["code"])))
+        inlinekeys.add(InlineKeyboardButton(text=galka+x["system_tag"]+' - '+x["city_name"], callback_data=csv_tables_call.new('to_csv_cities',param1=page, param2=x["system_tag"])))
 
     
    
@@ -196,11 +183,6 @@ async def show_table_cities_csv_func(call: types.CallbackQuery, callback_data:di
             text='▶️',
             callback_data=csv_tables_call.new('to_csv_cities',param1=nextpage, param2="none")
         ) 
-    print(len(cities_obj))    
-    print(math.ceil(len(cities_obj)/5))
-    print(page)
-    print(nextpage)
-    print(prevpage)
     html_text="\n".join(
         [
             ' '
@@ -213,7 +195,7 @@ async def show_table_cities_csv_func(call: types.CallbackQuery, callback_data:di
     ))
     inlinekeys.add(InlineKeyboardButton(
         text='↩️ Назад',
-        callback_data=csv_tables_call.new('init_csv_filtered',param1=1, param2="none")
+        callback_data='to_csv_tables'
     ))
     await SupportManage.inittimecsv.set()
     # await call.message.edit_text(text=html_text, reply_markup=inlinekeys)
@@ -230,10 +212,9 @@ async def show_table_time_csv_func(call: types.CallbackQuery, callback_data:dict
     inlinekeys = InlineKeyboardMarkup(row_width=2)
     inlinekeys.add(InlineKeyboardButton(
         text='↩️ Назад',
-        callback_data=csv_tables_call.new('init_csv_filtered',param1=1, param2="none")
+        callback_data='to_csv_tables'
     ))
     await SupportManage.accept_time.set()
-    # await call.message.edit_text(text=html_text, reply_markup=inlinekeys)
     await call.message.edit_media(media=InputMediaPhoto(media=photoparser('choosetimecsv'), caption=html_text), reply_markup=inlinekeys)
 
 @dp.message_handler(state=SupportManage.accept_time)
@@ -334,14 +315,9 @@ async def accept_time_csv_func(message: types.Message, state: FSMContext):
                 callback_data='supportbacktomenu'
             )]
         ])
-        # await message.answer(text=html_text, reply_markup=inlinekeys)
         await message.answer_photo(photo=photoparser('donecsv'), caption=html_text, reply_markup=inlinekeys)
-        # await call.message.edit_media(media=InputMediaPhoto(media=photoparser('choosetimecsv'), caption=html_text), reply_markup=inlinekeys)
     except:
         await message.answer(text="Вы ввели промежуток неверно")
-
-
-
 
 @dp.callback_query_handler(text='init_csv_users', state=SupportManage.menu)
 async def user_tables_csv(call:types.CallbackQuery, state: FSMContext):
