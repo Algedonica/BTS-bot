@@ -253,33 +253,3 @@ async def my_wallets_open(call:CallbackQuery, callback_data:dict):
         )
     await call.message.edit_text(html_text, reply_markup=inlinekeys)
 
-@dp.inline_handler(state='*',text='/w')
-async def show_wallets(query: types.InlineQuery):
-    thisuserwallets=wallets_collection.find({'user_id':query.from_user.id, 'is_active':'active'})
-    randomad=advertise_collection.aggregate([{ '$sample':{ 'size': 1}}])
-    randomad_str=' '
-    for x in randomad:
-        randomad_str=x['text']
-    results_arr=[]
-    i=1
-    if thisuserwallets.count()>0:
-        for thiswallet in thisuserwallets: 
-            html_text="\n".join([
-                thiswallet['wallet'],
-                ' ',
-                '===',
-                ' ',
-                randomad_str
-            ])
-            toadd=types.InlineQueryResultArticle(
-                    id=i,
-                    title=thiswallet['name'],
-                    description=thiswallet['wallet'],
-                    input_message_content=types.InputMessageContent(message_text=html_text, parse_mode='HTML'),
-                )
-            results_arr.append(toadd)
-            i=i+1
-        await query.answer(
-            results=results_arr,
-            cache_time=0
-        )

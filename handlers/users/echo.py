@@ -2926,7 +2926,6 @@ async def generatematerial(message: types.Message):
 
 @dp.inline_handler(state='*')
 async def show_inline_materials(query: types.InlineQuery):
-   
     if len(query.query)<1:
         raise CancelHandler() 
     elif query.query.startswith('#'):

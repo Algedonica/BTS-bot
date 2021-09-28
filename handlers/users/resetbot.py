@@ -1,7 +1,7 @@
 from datetime import datetime
 from aiogram import types
 from loader import dp, bot
-from data.config import user_collection, ticket_collection, staff_collection, settings_collection, states_collection, pmessages_collection, channelid
+from data.config import user_collection, ticket_collection, staff_collection, settings_collection, advertise_collection, wallets_collection, channelid
 from states import ProjectManage,SupportManage
 from aiogram.types import CallbackQuery,ReplyKeyboardRemove, InputFile
 from aiogram.utils.callback_data import CallbackData
@@ -309,6 +309,39 @@ async def to_extra_msg(call: types.CallbackQuery):
     await call.message.answer(text=html_text,reply_markup=inlinekeyb)
     await SupportManage.extra_message_init.set()
 
+
+@dp.inline_handler(text='/w', state='*')
+async def show_wallets(query: types.InlineQuery):
+    print('a')
+    thisuserwallets=wallets_collection.find({'user_id':query.from_user.id, 'is_active':'active'})
+    randomad=advertise_collection.aggregate([{ '$sample':{ 'size': 1}}])
+    randomad_str=' '
+    for x in randomad:
+        randomad_str=x['text']
+    results_arr=[]
+    i=1
+    if thisuserwallets.count()>0:
+        for thiswallet in thisuserwallets: 
+            html_text="\n".join([
+                thiswallet['wallet'],
+                ' ',
+                '===',
+                ' ',
+                randomad_str
+            ])
+            toadd=types.InlineQueryResultArticle(
+                    id=i,
+                    title=thiswallet['name'],
+                    description=thiswallet['wallet'],
+                    input_message_content=types.InputMessageContent(message_text=html_text, parse_mode='HTML'),
+                )
+            results_arr.append(toadd)
+            i=i+1
+        await query.answer(
+            results=results_arr,
+            cache_time=0,
+            is_personal=True
+        )
 
 
 @dp.inline_handler(regexp="ff_", state=SupportManage)
